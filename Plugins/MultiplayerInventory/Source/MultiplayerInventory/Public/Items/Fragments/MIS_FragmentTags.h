@@ -1,0 +1,31 @@
+#pragma once
+
+#include "NativeGameplayTags.h"
+
+/**
+ * Fragment 标签常量 - 标识每个物品片段的类型
+ * 被 Fragment 系统使用,用于按标签查找特定类型的物品片段
+ */
+namespace MIS_FragmentTags
+{
+	MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(GridFragment)            // 网格片段 - 物品占用格子尺寸
+	MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(IconFragment)            // 图标片段 - 物品显示图标
+	MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(StackableFragment)       // 可堆叠片段
+	MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(ConsumableFragment)      // 可消耗片段
+	MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(EquipmentFragment)       // 可装备片段
+
+	MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemNameFragment)        // 物品名称片段
+	MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(PrimaryStatFragment)     // 主要属性片段
+
+	MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemTypeFragment)        // 物品类型片段
+	MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(FlavorTextFragment)      // 描述文本片段
+	MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SellValueFragment)       // 售价片段
+	MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(RequiredLevelFragment)   // 需求等级片段
+
+	namespace StatMod
+	{
+		MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(StatMod_1)           // 属性修饰1
+		MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(StatMod_2)           // 属性修饰2
+		MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(StatMod_3)           // 属性修饰3
+	}
+}

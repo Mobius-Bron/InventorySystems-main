@@ -1,0 +1,106 @@
+# MultiplayerInventory 插件 - 文件结构文档
+
+## 整体概述
+本插件是一个 Unreal Engine 5 多人库存系统插件,采用 MVVM 架构,
+提供空间网格库存、装备系统、消耗品系统、物品拾取与丢弃等功能。
+所有类的前缀均为 MIS_ (Multiplayer Inventory System),避免与现有项目命名冲突。
+
+## 目录结构
+
+```
+MultiplayerInventory/
+├── MultiplayerInventory.uplugin              # 插件描述文件
+├── Resources/
+│   └── Icon128.png                           # 插件图标
+├── Binaries/                                 # 编译产物 (自动生成)
+├── Intermediate/                             # 中间文件 (自动生成)
+└── Source/MultiplayerInventory/
+    ├── MultiplayerInventory.Build.cs         # 模块构建配置 (依赖声明)
+    ├── Public/                               # 公开头文件
+    │   ├── MultiplayerInventory.h            # 模块入口 (IModuleInterface + LogMIS)
+    │   │
+    │   ├── Types/                            # 通用类型定义
+    │   │   └── MIS_GridTypes.h               # 网格相关枚举和结构体
+    │   │
+    │   ├── Items/                            # 物品数据层
+    │   │   ├── MIS_InventoryItem.h           # 运行时物品 UObject (可网络复制)
+    │   │   ├── MIS_ItemTags.h                # 物品 GameplayTag 命名空间声明
+    │   │   ├── Manifest/
+    │   │   │   └── MIS_ItemManifest.h        # 物品清单/配置容器 (Fragment 集合)
+    │   │   ├── Fragments/                    # Fragment 片段系统
+    │   │   │   ├── MIS_ItemFragment.h        # 片段基类及所有子类定义
+    │   │   │   └── MIS_FragmentTags.h        # 片段标签常量定义
+    │   │   └── Components/
+    │   │       └── MIS_ItemComponent.h       # 世界中的可拾取物品 ActorComponent
+    │   │
+    │   ├── InventoryManagement/              # 库存管理层
+    │   │   ├── Components/
+    │   │   │   └── MIS_InventoryComponent.h  # 库存核心组件 (ViewModel)
+    │   │   └── FastArray/
+    │   │       └── MIS_FastArray.h           # Fast Array 网络序列化器
+    │   │
+    │   ├── BlueprintFunctionLibraries/       # 蓝图函数库 (统一文件夹)
+    │   │   ├── MIS_InventoryFunctionLibrary.h    # 库存业务函数库
+    │   │   └── MIS_WidgetFunctionLibrary.h       # Widget 工具函数库
+    │   │
+    │   ├── EquipmentManagement/              # 装备管理层
+    │   │   ├── Components/
+    │   │   │   └── MIS_EquipmentComponent.h  # 装备管理组件
+    │   │   ├── EquipActor/
+    │   │   │   └── MIS_EquipActor.h          # 装备 3D Actor (附着角色骨骼)
+    │   │   └── ProxyMesh/
+    │   │       └── MIS_ProxyMesh.h           # 库存 UI 中角色预览代理
+    │   │
+    │   ├── Interaction/                      # 交互层 (拾取高亮)
+    │   │   ├── MIS_Highlightable.h           # 高亮接口 (IInterface)
+    │   │   ├── MIS_HighlightableStaticMesh.h # 静态网格体高亮组件
+    │   │   └── MIS_HighlightableSkeletalMesh.h # 骨骼网格体高亮组件
+    │   │
+    │   └── Widgets/                          # UI 层 (UMG Widget)
+    │       ├── Inventory/
+    │       │   ├── InventoryBase/
+    │       │   │   └── MIS_InventoryWidget.h # 库存主界面 (单Grid + 装备栏)
+    │       │   ├── Spatial/
+    │       │   │   └── MIS_InventoryGrid.h   # 库存网格 (核心 UI 逻辑)
+    │       │   ├── GridSlots/
+    │       │   │   ├── MIS_GridSlot.h        # 网格槽位 Widget
+    │       │   │   └── MIS_EquippedGridSlot.h    # 装备栏槽位 Widget
+    │       │   ├── SlottedItems/
+    │       │   │   ├── MIS_SlottedItem.h     # 网格上的物品图标 Widget
+    │       │   │   └── MIS_EquippedSlottedItem.h # 装备栏上的物品图标 Widget
+    │       │   └── HoverItem/
+    │       │       └── MIS_HoverItem.h       # 鼠标拖拽跟随的物品 Widget
+    │       ├── Composite/                    # 组合模式 UI (物品详情显示)
+    │       │   ├── MIS_CompositeBase.h       # 组合基类
+    │       │   ├── MIS_Composite.h           # 组合容器
+    │       │   ├── MIS_Leaf.h                # 叶子节点基类
+    │       │   ├── MIS_Leaf_Text.h           # 文本叶子
+    │       │   ├── MIS_Leaf_Image.h          # 图片叶子
+    │       │   └── MIS_Leaf_LabeledValue.h   # 标签数值叶子
+    │       ├── ItemPopUp/
+    │       │   └── MIS_ItemPopUp.h           # 右键弹出菜单 (拆分/丢弃/消耗)
+    │       ├── ItemDescription/
+    │       │   └── MIS_ItemDescription.h     # 物品详情悬浮提示
+    │       ├── CharacterDisplay/
+    │       │   └── MIS_CharacterDisplay.h    # 角色模型旋转预览
+    │       └── HUD/
+    │           ├── MIS_HUDWidget.h           # HUD Widget (游戏内 UI)
+    │           └── MIS_InfoMessage.h         # 信息提示 Widget
+    │
+    └── Private/                              # 实现文件 (结构与 Public 对应)
+        └── ... (与 Public 结构完全相同)
+```
+
+## 核心架构层次
+
++--------------------------+
+|       Widgets (UI)        |  ← 纯视图: 渲染 + 转发用户交互
++--------------------------+
+|  MIS_InventoryComponent   |  ← ViewModel: 数据 + 命令 + 委托
+|  MIS_EquipmentComponent   |
++--------------------------+
+|  Fragments / Manifest     |  ← 数据模型: 物品属性配置
+|  MIS_InventoryItem        |
++--------------------------+
+|  MIS_FastArray            |  ← 网络层: 高效增量复制
++--------------------------+

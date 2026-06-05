@@ -1,0 +1,68 @@
+#pragma once
+
+#include "NativeGameplayTags.h"
+
+/**
+ * 物品标签 - 定义所有物品的 GameplayTag 层级结构
+ * 用于物品类型分类和装备槽位匹配
+ * 层级: GameItems.Equipment.Weapons.Sword 等
+ */
+namespace MIS_GameItems
+{
+	namespace Equipment
+	{
+		namespace Weapons
+		{
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Axe)            // 斧头
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Sword)          // 剑
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Knife)          // 匕首
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Bloodthorn)     // 血棘
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(NightsEdge)     // 暗夜之刃
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Shadowbane)     // 暗影之刃
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Staff)          // 法杖
+		}
+
+		namespace Cloaks
+		{
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(RedCloak)       // 红色披风
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(BlueCloak)      // 蓝色披风
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(GreenCloak)     // 绿色披风
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(YellowCloak)    // 黄色披风
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(DarkGrayCloak)  // 深灰披风
+		}
+
+		namespace Masks
+		{
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SteelMask)      // 钢面具
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(GreenMask)      // 绿色面具
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(BlueMask)       // 蓝色面具
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(YellowMask)     // 黄色面具
+			MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(GrayMask)       // 灰色面具
+		}
+	}
+
+	namespace Consumables
+	{
+		namespace Potions
+		{
+			namespace Red
+			{
+				MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Small)      // 小型红药
+				MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Large)      // 大型红药
+			}
+
+			namespace Blue
+			{
+				MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Small)      // 小型蓝药
+				MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Large)      // 大型蓝药
+			}
+		}
+	}
+
+	namespace Craftables
+	{
+		MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(FireFernFruit)      // 火蕨果实
+		MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(LuminDaisy)         // 光雏菊
+		MULTIPLAYERINVENTORY_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(ScorchPetalBlossom) // 焦瓣花
+	}
+}

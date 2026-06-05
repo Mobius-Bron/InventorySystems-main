@@ -1,0 +1,206 @@
+# MultiplayerInventory 插件 - 类视图文档
+
+## 一、数据层 (Fragment 片段系统)
+
+### FMIS_ItemFragment (物品片段基类)
+  - 继承: 无 (USTRUCT)
+  - 职责: 所有物品属性的基类,通过 GameplayTag 标识片段类型
+  - 子类:
+    |- FMIS_InventoryItemFragment  (可同化到 UI 的片段基类)
+    |   |- FMIS_ImageFragment      (物品图标)
+    |   |- FMIS_TextFragment       (物品文本)
+    |   |- FMIS_LabeledNumberFragment  (带标签的数值,支持随机化)
+    |   |- FMIS_ConsumableFragment (消耗品行为,含 ConsumeModifier 数组)
+    |   `- FMIS_EquipmentFragment  (装备行为,含 EquipModifier 数组)
+    |- FMIS_GridFragment           (网格占用尺寸,如 1x1 或 2x3)
+    |- FMIS_StackableFragment      (可堆叠,最大堆叠数+当前数量)
+    |- FMIS_ConsumeModifier        (消耗效果基类)
+    |   |- FMIS_HealthPotionFragment   (生命药水)
+    |   `- FMIS_ManaPotionFragment     (法力药水)
+    `- FMIS_EquipModifier          (装备效果基类)
+        |- FMIS_StrengthModifier       (力量加成)
+        |- FMIS_ArmorModifier          (护甲加成)
+        `- FMIS_DamageModifier         (伤害加成)
+
+### FMIS_ItemManifest (物品配置清单)
+  - 继承: 无 (USTRUCT)
+  - 职责: 物品的完整配置数据容器,包含所有 Fragment 列表
+  - 关键方法:
+    Manifest()          — 从配置创建运行时 UObject
+    AssimilateFragments() — 将 Fragment 数据注入 UI 组合控件
+    GetFragmentOfType<>() — 模板方法,按类型查找 Fragment
+
+### UMIS_InventoryItem (运行时物品对象)
+  - 继承: UObject
+  - 职责: 运行时物品实例,持有 Manifest + 堆叠计数,支持网络复制
+
+## 二、组件层 (Component)
+
+### UMIS_InventoryComponent (库存组件 - ViewModel)
+  - 继承: UActorComponent
+  - 附着对象: PlayerController
+  - 职责: 库存的数据管理和业务逻辑核心
+  - 核心命令:
+    TryAddItem(ItemComponent)           — 尝试拾取物品
+    RequestConsumeItem(Item)            — 请求消耗物品
+    RequestDropItem(Item, StackCount)   — 请求丢弃物品
+    RequestEquipItem(ToEquip, ToUnequip)— 请求装备/卸下物品
+    RequestToggleInventory()            — 请求开关库存界面
+    SetupPlayerInput(Input)             — 绑定输入 Action
+  - 核心委托:
+    OnItemAdded / OnItemRemoved         — 物品增删通知
+    OnStackChange                       — 堆叠数量变化通知
+    OnItemEquipped / OnItemUnequipped   — 装备状态变化通知
+    OnInventoryToggledRequest           — 库存开关请求
+    OnPickupMessage / OnHidePickupMessage — 拾取提示信息
+  - 私有功能: Tick中自动执行射线检测,管理所有 Server RPC
+
+### UMIS_ItemComponent (物品拾取组件)
+  - 继承: UActorComponent
+  - 附着对象: 世界中的可拾取 Actor
+  - 职责: 挂载在可拾取物品上,包含 ItemManifest 配置和拾取消息
+
+### UMIS_EquipmentComponent (装备管理组件)
+  - 继承: UActorComponent
+  - 附着对象: PlayerController (或 AInv_ProxyMesh)
+  - 职责: 监听装备事件,在角色骨骼上生成/销毁 3D 装备 Actor
+  - 关键方法:
+    InitComponent(InventoryComponent)   — 绑定库存组件的装备事件
+    InitializeOwner(PC)                 — 初始化并获取角色骨骼网格体
+
+## 三、Actor 层
+
+### AMIS_EquipActor (装备 3D Actor)
+  - 继承: AActor
+  - 职责: 装备后附着在角色骨骼槽位上的可视 Actor,标记装备类型
+
+### AMIS_ProxyMesh (角色预览代理)
+  - 继承: AActor
+  - 职责: 复制玩家角色的骨骼网格体和动画蓝图,在库存界面中展示
+  - 自带 UMIS_EquipmentComponent (代理模式,不执行属性修改)
+
+## 四、接口层
+
+### IMIS_Highlightable (高亮接口)
+  - 继承: UInterface
+  - 职责: 提供 Highlight/UnHighlight 蓝图事件,用于拾取高亮
+
+### UMIS_HighlightableStaticMesh (静态网格高亮)
+  - 继承: UStaticMeshComponent + IMIS_Highlightable
+  - 职责: 通过 OverlayMaterial 实现静态网格体高亮
+
+### UMIS_HighlightableSkeletalMesh (骨骼网格高亮)
+  - 继承: USkeletalMeshComponent + IMIS_Highlightable
+  - 职责: 通过 OverlayMaterial 实现骨骼网格体高亮
+
+## 五、蓝图函数库
+
+### UMIS_InventoryFunctionLibrary (库存业务函数库)
+  - 继承: UBlueprintFunctionLibrary
+  - 职责: 提供库存相关的蓝图可调用工具函数
+  - 关键函数:
+    GetInventoryComponent(PC)   — 通过 PlayerController 获取库存组件
+    ForEach2D<>()               — 二维网格遍历模板函数
+
+### UMIS_WidgetFunctionLibrary (Widget 工具函数库)
+  - 继承: UBlueprintFunctionLibrary
+  - 职责: 提供纯几何/网格坐标计算的工具函数
+  - 关键函数:
+    GetWidgetPosition() / GetWidgetSize() — Widget 位置/尺寸
+    IsWithinBounds()                      — 边界检测
+    GetClampedWidgetPosition()            — 位置约束
+    GetIndexFromPosition()                — 二维坐标转一维索引
+    GetPositionFromIndex()                — 一维索引转二维坐标
+
+## 六、UI 层 (UMG Widget)
+
+### UMIS_InventoryWidget (库存主界面)
+  - 继承: UUserWidget
+  - 职责: 库存 UI 主容器,持有单库存网格 + 装备栏
+  - 暴露: EquippedGridSlots (TArray, 设计师可拖入配置)
+  - 关键方法:
+    InitFromComponent(Comp) — 绑定 ViewModel
+    OpenInventory() / CloseInventory() — 开关界面
+
+### UMIS_InventoryGrid (库存网格)
+  - 继承: UUserWidget
+  - 职责: 网格布局,物品放置/拖拽/堆叠,空间查询,右键菜单
+  - 关键方法:
+    InitFromComponent(Comp, Canvas) — 绑定 ViewModel + 画布
+    HasRoomForItem() / DropItem()
+    PickUp() / AssignHoverItem()
+  - 特色: NativePreConstruct() 在编辑器中预构建网格
+
+### UMIS_GridSlot (网格槽位)
+  - 继承: UUserWidget
+  - 职责: 单个网格格子,显示占用/空闲/选中/灰化状态
+  - 事件: GridSlotClicked, GridSlotHovered, GridSlotUnhovered
+
+### UMIS_EquippedGridSlot (装备栏槽位)
+  - 继承: UMIS_GridSlot
+  - 职责: 装备栏中的槽位,绑定 EquipmentTypeTag,处理装备物品放置
+  - 公共属性: EquipmentTypeTag (可在 UMG 中设置)
+
+### UMIS_SlottedItem (网格上的物品图标)
+  - 继承: UUserWidget
+  - 职责: 显示在网格上的物品,含图标和堆叠数量
+
+### UMIS_EquippedSlottedItem (装备栏上的物品图标)
+  - 继承: UMIS_SlottedItem
+  - 职责: 显示在装备栏上的物品,点击可卸下
+
+### UMIS_HoverItem (拖拽跟随物品)
+  - 继承: UUserWidget
+  - 职责: 鼠标拖拽时跟随光标的物品 Widget,含图标和堆叠数
+
+### UMIS_ItemPopUp (右键弹出菜单)
+  - 继承: UUserWidget
+  - 职责: 右键物品时弹出的菜单,提供拆分/丢弃/消耗操作
+
+### UMIS_ItemDescription (物品详情提示)
+  - 继承: UUserWidget
+  - 职责: 鼠标悬停时显示物品详细信息的悬浮框
+
+### UMIS_CharacterDisplay (角色旋转预览)
+  - 继承: UUserWidget
+  - 职责: 库存界面中通过鼠标拖拽旋转 ProxyMesh 角色模型
+
+### UMIS_HUDWidget (HUD 界面)
+  - 继承: UUserWidget
+  - 职责: 游戏主界面 HUD,显示拾取提示、背包满提示等
+
+### UMIS_InfoMessage (信息提示)
+  - 继承: UUserWidget
+  - 职责: HUD 上的信息提示 Widget
+
+## 七、Composite 组合 UI (物品详情显示)
+
+### UMIS_CompositeBase (组合基类)
+  - 继承: UUserWidget
+  - 职责: 组合模式基类,绑定 FragmentTag,支持折叠/展开
+
+### UMIS_Composite (组合容器)
+  - 继承: UMIS_CompositeBase
+  - 职责: 持有多个子节点,递归调用 ApplyFunction/Collapse
+
+### UMIS_Leaf (叶子节点基类)
+  - 继承: UMIS_CompositeBase
+  - 职责: 叶子节点基类,ApplyFunction 作用在自身
+
+### UMIS_Leaf_Text / Leaf_Image / Leaf_LabeledValue
+  - 继承: UMIS_Leaf
+  - 职责: 文本/图片/标签数值的叶子 Widget
+
+## 八、网络序列化
+
+### FMIS_InventoryEntry (库存条目)
+  - 继承: FFastArraySerializerItem
+  - 职责: FastArray 中的单个条目,持有 InventoryItem 引用
+
+### FMIS_InventoryFastArray (库存快速数组)
+  - 继承: FFastArraySerializer
+  - 职责: 库存的网络复制容器,支持增量同步(NetDeltaSerialize)
+  - 关键方法:
+    AddEntry() / RemoveEntry()
+    FindFirstItemByType()
+    PreReplicatedAdd / PreReplicatedRemove (触发 UI 更新)

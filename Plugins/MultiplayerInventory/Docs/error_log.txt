@@ -1,0 +1,63 @@
+CONSOLE: Use build tool: C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\amd64\MSBuild.exe
+:   : null
+21:31:55 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\UnrealBuildTool\UnrealBuildTool.csproj
+21:31:55 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Build\EpicGames.Build.csproj
+21:31:55 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Core\EpicGames.Core.csproj
+21:31:55 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Horde\EpicGames.Horde.csproj
+21:31:55 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.IoHash\EpicGames.IoHash.csproj
+21:31:56 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.OIDC\EpicGames.OIDC.csproj
+21:31:56 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Serialization\EpicGames.Serialization.csproj
+21:31:56 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UBA\EpicGames.UBA.csproj
+21:31:56 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UHT\EpicGames.UHT.csproj
+21:31:56 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.MsBuild\EpicGames.MsBuild.csproj
+21:31:56 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Oodle\EpicGames.Oodle.csproj
+EpicGames.Core -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Core\bin\Development\net8.0\EpicGames.Core.dll
+EpicGames.IoHash -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.IoHash\bin\Development\net8.0\EpicGames.IoHash.dll
+EpicGames.MsBuild -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.MsBuild\bin\Development\net8.0\EpicGames.MsBuild.dll
+EpicGames.Build -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Build\bin\Development\net8.0\EpicGames.Build.dll
+EpicGames.OIDC -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.OIDC\bin\Development\net8.0\EpicGames.OIDC.dll
+EpicGames.Oodle -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Oodle\bin\Development\net8.0\EpicGames.Oodle.dll
+EpicGames.Serialization -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Serialization\bin\Development\net8.0\EpicGames.Serialization.dll
+EpicGames.Horde -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Horde\bin\Development\net8.0\EpicGames.Horde.dll
+EpicGames.UBA -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UBA\bin\Development\net8.0\EpicGames.UBA.dll
+EpicGames.UHT -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UHT\bin\Development\net8.0\EpicGames.UHT.dll
+UnrealBuildTool -> C:\UnrealEngine\UE_5.5\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll
+21:31:57 Building C:\UnrealProject\InventorySystems-main\Intermediate\ProjectFiles\InventoryProject.vcxproj
+C:\UnrealEngine\UE_5.5\Engine\Build\BatchFiles\Build.bat InventoryProjectEditor Win64 Development -Project="C:\UnrealProject\InventorySystems-main\InventoryProject.uproject" -WaitMutex -FromMsBuild -architecture=x64
+Using bundled DotNet SDK version: 8.0.300
+Running UnrealBuildTool: dotnet "..\..\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" InventoryProjectEditor Win64 Development -Project="C:\UnrealProject\InventorySystems-main\InventoryProject.uproject" -WaitMutex -FromMsBuild -architecture=x64
+Log file: C:\Users\AmberIonian\AppData\Local\UnrealBuildTool\Log.txt
+Parsing headers for InventoryProjectEditor
+  Running Internal UnrealHeaderTool C:\UnrealProject\InventorySystems-main\InventoryProject.uproject C:\UnrealProject\InventorySystems-main\Intermediate\Build\Win64\InventoryProjectEditor\Development\InventoryProjectEditor.uhtmanifest -WarningsAsErrors -installed
+Total of 5 written
+Reflection code generated for InventoryProjectEditor in 4.897413 seconds
+Building InventoryProjectEditor...
+Using Visual Studio 2022 14.38.33145 toolchain (C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130) and Windows 10.0.22621.0 SDK (C:\Program Files (x86)\Windows Kits\10).
+[Adaptive Build] Excluded from MultiplayerInventory unity file: MultiplayerInventory.cpp, MIS_InventoryFunctionLibrary.cpp, MIS_WidgetFunctionLibrary.cpp, MIS_EquipmentComponent.cpp, MIS_EquipActor.cpp, MIS_ProxyMesh.cpp, MIS_HighlightableSkeletalMesh.cpp, MIS_HighlightableStaticMesh.cpp, MIS_InventoryComponent.cpp, MIS_FastArray.cpp, MIS_InventoryItem.cpp, MIS_ItemTags.cpp, MIS_ItemComponent.cpp, MIS_FragmentTags.cpp, MIS_ItemFragment.cpp, MIS_ItemManifest.cpp, MIS_GridTypes.cpp, MIS_CharacterDisplay.cpp, MIS_Composite.cpp, MIS_CompositeBase.cpp, MIS_Leaf.cpp, MIS_Leaf_Image.cpp, MIS_Leaf_LabeledValue.cpp, MIS_Leaf_Text.cpp, MIS_HUDWidget.cpp, MIS_InfoMessage.cpp, MIS_EquippedGridSlot.cpp, MIS_GridSlot.cpp, MIS_HoverItem.cpp, MIS_InventoryWidget.cpp, MIS_EquippedSlottedItem.cpp, MIS_SlottedItem.cpp, MIS_InventoryGrid.cpp, MIS_ItemDescription.cpp, MIS_ItemPopUp.cpp
+[Adaptive Build] Excluded from DebugHelper unity file: DebugHelper.cpp, DH_DebugFunctionLibrary.cpp
+Determining max actions to execute in parallel (32 physical cores, 64 logical cores)
+  Executing up to 32 processes, one per physical core
+  Requested 1.5 GB memory per action, 27.46 GB available: limiting max parallel actions to 18
+Using Unreal Build Accelerator local executor to run 11 action(s)
+  Storage capacity 40Gb
+---- Starting trace: 260605_213203 ----
+UbaSessionServer - Disable remote execution (remote sessions will finish current processes)
+------ Building 11 action(s) started ------
+[1/11] Compile [x64] MIS_InventoryWidget.cpp
+[2/11] Compile [x64] MIS_PlayerController.cpp
+[3/11] Compile [x64] MIS_InventoryGrid.cpp
+11>MIS_InventoryGrid.cpp(1301): Error C4458 : “HoverItem”的声明隐藏了类成员
+11>MIS_InventoryGrid.h(259): Reference C4458 : 参见“UMIS_InventoryGrid::HoverItem”的声明
+11>MIS_InventoryGrid.cpp(1304): Error C4458 : “TileSize”的声明隐藏了类成员
+11>MIS_InventoryGrid.h(253): Reference C4458 : 参见“UMIS_InventoryGrid::TileSize”的声明
+11>MIS_InventoryGrid.cpp(1324): Error C4458 : “HoverItem”的声明隐藏了类成员
+11>MIS_InventoryGrid.h(259): Reference C4458 : 参见“UMIS_InventoryGrid::HoverItem”的声明
+[4/11] Compile [x64] MIS_InventoryComponent.cpp
+[5/11] Compile [x64] MIS_PlayerCharacter.cpp
+[6/11] Link [x64] UnrealEditor-InventoryProject.lib
+  正在创建库 C:\UnrealProject\InventorySystems-main\Intermediate\Build\Win64\x64\UnrealEditor\Development\InventoryProject\UnrealEditor-InventoryProject.lib 和对象 C:\UnrealProject\InventorySystems-main\Intermediate\Build\Win64\x64\UnrealEditor\Development\InventoryProject\UnrealEditor-InventoryProject.exp
+[7/11] Compile [x64] Module.MultiplayerInventory.cpp
+Trace file written to C:/Users/AmberIonian/AppData/Local/UnrealBuildTool/Log.uba with size 5.5kb
+Total time in Unreal Build Accelerator local executor: 7.92 seconds
+Total execution time: 13.83 seconds
+11>Microsoft.MakeFile.Targets(44,5): Error MSB3073 : 命令“C:\UnrealEngine\UE_5.5\Engine\Build\BatchFiles\Build.bat InventoryProjectEditor Win64 Development -Project="C:\UnrealProject\InventorySystems-main\InventoryProject.uproject" -WaitMutex -FromMsBuild -architecture=x64”已退出，代码为 6。

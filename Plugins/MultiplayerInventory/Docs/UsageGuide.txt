@@ -1,0 +1,105 @@
+# MultiplayerInventory 插件 - 项目使用介绍
+
+## 一、快速集成
+
+### 1.1 给物品添加拾取能力
+在世界中的 Actor 上添加 UMIS_ItemComponent 组件,在 ItemManifest 中配置:
+  - FMIS_GridFragment       — 设置 GridSize(如 2x2)和 GridPadding
+  - FMIS_ImageFragment      — 设置图标纹理和尺寸
+  - FMIS_StackableFragment  — (可选) 最大堆叠数和初始数量
+  - FMIS_EquipmentFragment  — (可选) 装备类型 Tag + 附着骨骼点 + EquipActorClass
+  - FMIS_ConsumableFragment — (可选) 消耗品修饰器数组
+  - ItemType GameplayTag    — 物品类型标签 (如 GameItems.Equipment.Weapons.Sword)
+
+### 1.2 给角色添加库存系统
+在 PlayerController 上添加:
+  - UMIS_InventoryComponent  — 库存核心组件
+  - UMIS_EquipmentComponent  — 装备管理组件
+
+在 Pawn/Character 的 SetupPlayerInputComponent 中转发输入:
+  void AMyCharacter::SetupPlayerInputComponent(UInputComponent* Input)
+  {
+      Super::SetupPlayerInputComponent(Input);
+      auto* InvComp = FindComponentByClass<UMIS_InventoryComponent>();
+      InvComp->SetupPlayerInput(Cast<UEnhancedInputComponent>(Input));
+  }
+
+### 1.3 在 InventoryComponent 上配置
+  - DefaultIMC              — 输入映射上下文 (Enhanced Input)
+  - PrimaryInteractAction   — 拾取按键 (如左键/E键)
+  - ToggleInventoryAction   — 开关背包按键 (如Tab键)
+  - TraceLength             — 射线检测距离 (默认 500)
+  - ItemTraceChannel        — 物品射线通道 (ECC_GameTraceChannel1)
+
+### 1.4 创建库存 UI
+创建蓝图继承 UMIS_InventoryWidget,将以下内容加入 UMG:
+  - CanvasPanel  (必需, 命名 CanvasPanel)
+  - UMIS_InventoryGrid (必需, 命名 InventoryGrid)
+  - 在 EquippedGridSlots 数组中拖入 UMIS_EquippedGridSlot
+
+在任意地方创建并绑定:
+  auto* PC = GetOwningPlayerController();
+  auto* InvComp = UMIS_InventoryFunctionLibrary::GetInventoryComponent(PC);
+  auto* Widget = CreateWidget<UMIS_InventoryWidget>(PC, InventoryWidgetClass);
+  Widget->InitFromComponent(InvComp);
+  InvComp->OnInventoryToggledRequest.AddDynamic(this, &ToggleWidget);
+  InvComp->OnPickupMessage.AddDynamic(this, &ShowPickupText);
+  InvComp->OnHidePickupMessage.AddDynamic(this, &HidePickupText);
+
+## 二、主要对外使用的类
+
+### 2.1 给世界物品使用的
+  UMIS_ItemComponent             — 添加在可拾取 Actor 上
+  UMIS_HighlightableStaticMesh   — 静态网格体的拾取高亮
+  UMIS_HighlightableSkeletalMesh — 骨骼网格体的拾取高亮
+
+### 2.2 给角色使用的 Component
+  UMIS_InventoryComponent   — 库存管理 (拾取/丢弃/消耗/装备)
+  UMIS_EquipmentComponent   — 装备管理 (3D装备生成/属性修改)
+
+### 2.3 给 UI 使用的 Widget
+  UMIS_InventoryWidget      — 库存主界面
+  UMIS_InventoryGrid        — 库存网格 (也可单独使用)
+  UMIS_EquippedGridSlot     — 装备栏槽位
+  UMIS_HUDWidget            — 游戏内 HUD
+  UMIS_CharacterDisplay     — 角色预览 (配合 AMIS_ProxyMesh)
+  UMIS_ItemDescription      — 物品详情悬浮提示
+
+### 2.4 蓝图函数库
+  UMIS_InventoryFunctionLibrary.GetInventoryComponent() — 获取库存组件
+  UMIS_WidgetFunctionLibrary.GetIndexFromPosition()     — 坐标转索引
+
+### 2.5 核心委托 (供外部订阅)
+  InventoryComponent.OnItemAdded         — 物品添加时
+  InventoryComponent.OnItemRemoved       — 物品移除时
+  InventoryComponent.OnStackChange       — 堆叠变化时
+  InventoryComponent.OnItemEquipped      — 装备时
+  InventoryComponent.OnItemUnequipped    — 卸下时
+  InventoryComponent.OnInventoryToggledRequest — 背包开关请求
+  InventoryComponent.OnPickupMessage     — 显示拾取消息
+  InventoryComponent.OnHidePickupMessage — 隐藏拾取消息
+  InventoryComponent.OnNoRoomInInventory — 背包已满
+
+## 三、创建自定义物品
+
+### 3.1 在编辑器中创建 DataAsset 或直接配置 ItemComponent
+在物品 Actor 的 UMIS_ItemComponent 的 ItemManifest 中:
+  - 添加 GridFragment, 设置网格尺寸 (如 2x3 = 占用6格)
+  - 添加 ImageFragment, 设置图标
+  - (可选) 添加 StackableFragment, 设置最大堆叠
+  - (可选) 添加 EquipmentFragment, 设置:
+      EquipmentType = 装备槽 Tag
+      SocketAttachPoint = 骨骼附着点名称
+      EquipActorClass = 装备 Actor 蓝图类
+      EquipModifiers = [StrengthModifier, DamageModifier, ...]
+  - (可选) 添加 ConsumableFragment, 设置:
+      ConsumeModifiers = [HealthPotionFragment, ...]
+
+### 3.2 创建自定义消耗品效果
+继承 FMIS_ConsumeModifier, 重写 OnConsume(APlayerController* PC):
+  在 PC 或 PC->GetPawn() 上获取属性组件,修改属性值
+
+### 3.3 创建自定义装备效果
+继承 FMIS_EquipModifier, 重写:
+  OnEquip(APlayerController* PC)   — 装备时执行 (如 +15 力量)
+  OnUnequip(APlayerController* PC) — 卸下时执行 (如 -15 力量)
