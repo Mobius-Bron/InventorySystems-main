@@ -3,5 +3,9 @@
 AMIS_EquipActor::AMIS_EquipActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	bReplicates = true;
+	SetReplicates(true);
+	bAlwaysRelevant = true;
+	SetNetUpdateFrequency(100.f);
+	SetMinNetUpdateFrequency(33.f);
+	SetReplicatingMovement(false);
 }

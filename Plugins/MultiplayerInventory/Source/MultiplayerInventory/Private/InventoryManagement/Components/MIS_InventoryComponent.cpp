@@ -132,12 +132,20 @@ void UMIS_InventoryComponent::ToggleInventory()
 
 void UMIS_InventoryComponent::TryAddItem(UMIS_ItemComponent* ItemComponent)
 {
-	DH_LOG("[背包组件] >>> 进入 TryAddItem");
+	DH_SCREEN(3.f, DHColors::Cyan, "[背包组件] >>> 进入 TryAddItem | ItemComp=%s | Widget=%s",
+		IsValid(ItemComponent) ? TEXT("有效") : TEXT("空"),
+		IsValid(InventoryWidget) ? TEXT("有效") : TEXT("空"));
 
 	if (!IsValid(ItemComponent)) return;
-	if (!IsValid(InventoryWidget)) return;
+	if (!IsValid(InventoryWidget))
+	{
+		DH_SCREEN(5.f, DHColors::Red, "[背包组件] TryAddItem 失败: InventoryWidget 为空!");
+		return;
+	}
 
 	FMIS_SlotAvailabilityResult Result = InventoryWidget->HasRoomForItem(ItemComponent);
+
+	DH_SCREEN(3.f, DHColors::Cyan, "[背包组件] HasRoomForItem | 总空间=%d | 槽位数=%d", Result.TotalRoomToFill, Result.SlotAvailabilities.Num());
 
 	UMIS_InventoryItem* FoundItem = InventoryList.FindFirstItemByType(ItemComponent->GetItemManifest().GetItemType());
 	Result.Item = FoundItem;
@@ -156,20 +164,33 @@ void UMIS_InventoryComponent::TryAddItem(UMIS_ItemComponent* ItemComponent)
 	{
 		DH_LOG("[背包组件] -> 堆叠已有物品 | 填充=%d | 剩余=%d", Result.TotalRoomToFill, Result.Remainder);
 		OnStackChange.Broadcast(Result);
-		Server_AddStacksToItem(ItemComponent, Result.TotalRoomToFill, Result.Remainder);
+		Server_AddStacksToItem(ItemComponent->GetOwner(), Result.TotalRoomToFill, Result.Remainder);
 	}
 	else if (Result.TotalRoomToFill > 0)
 	{
 		DH_LOG("[背包组件] -> 新建物品条目 | 堆叠数=%d | 剩余=%d",
 			Result.bStackable ? Result.TotalRoomToFill : 0, Result.Remainder);
-		Server_AddNewItem(ItemComponent, Result.bStackable ? Result.TotalRoomToFill : 0, Result.Remainder);
+		Server_AddNewItem(ItemComponent->GetOwner(), Result.bStackable ? Result.TotalRoomToFill : 0, Result.Remainder);
 	}
 }
 
-void UMIS_InventoryComponent::Server_AddNewItem_Implementation(UMIS_ItemComponent* ItemComponent, int32 StackCount, int32 Remainder)
+void UMIS_InventoryComponent::Server_AddNewItem_Implementation(AActor* ItemActor, int32 StackCount, int32 Remainder)
 {
-	DH_PRINT(EDH_Output::Both, 4.f, FLinearColor::Green,
-		"[背包组件] Server_AddNewItem | 堆叠=%d | 剩余=%d", StackCount, Remainder);
+	if (!IsValid(ItemActor))
+	{
+		DH_SCREEN(5.f, DHColors::Red, "[背包组件] Server_AddNewItem 失败: ItemActor 为空 — 拾取Actor未开启bReplicates?");
+		return;
+	}
+
+	UMIS_ItemComponent* ItemComponent = ItemActor->FindComponentByClass<UMIS_ItemComponent>();
+	if (!IsValid(ItemComponent))
+	{
+		DH_SCREEN(5.f, DHColors::Red, "[背包组件] Server_AddNewItem 失败: ItemActor(%s) 上没有 ItemComponent", *ItemActor->GetName());
+		return;
+	}
+
+	DH_SCREEN(3.f, DHColors::Green, "[背包组件] Server_AddNewItem 收到 | Actor=%s | 堆叠=%d | 剩余=%d",
+		*ItemActor->GetName(), StackCount, Remainder);
 
 	UMIS_InventoryItem* NewItem = InventoryList.AddEntry(ItemComponent);
 	NewItem->SetTotalStackCount(StackCount);
@@ -194,9 +215,24 @@ void UMIS_InventoryComponent::Server_AddNewItem_Implementation(UMIS_ItemComponen
 	}
 }
 
-void UMIS_InventoryComponent::Server_AddStacksToItem_Implementation(UMIS_ItemComponent* ItemComponent, int32 StackCount, int32 Remainder)
+void UMIS_InventoryComponent::Server_AddStacksToItem_Implementation(AActor* ItemActor, int32 StackCount, int32 Remainder)
 {
-	const FGameplayTag& ItemType = IsValid(ItemComponent) ? ItemComponent->GetItemManifest().GetItemType() : FGameplayTag::EmptyTag;
+	if (!IsValid(ItemActor))
+	{
+		DH_SCREEN(5.f, DHColors::Red, "[背包组件] Server_AddStacks 失败: ItemActor 为空");
+		return;
+	}
+
+	UMIS_ItemComponent* ItemComponent = ItemActor->FindComponentByClass<UMIS_ItemComponent>();
+	if (!IsValid(ItemComponent))
+	{
+		DH_SCREEN(5.f, DHColors::Red, "[背包组件] Server_AddStacks 失败: ItemActor(%s) 上没有 ItemComponent", *ItemActor->GetName());
+		return;
+	}
+
+	DH_SCREEN(3.f, DHColors::Green, "[背包组件] Server_AddStacks 收到 | Actor=%s | 堆叠=%d", *ItemActor->GetName(), StackCount);
+
+	const FGameplayTag& ItemType = ItemComponent->GetItemManifest().GetItemType();
 	UMIS_InventoryItem* Item = InventoryList.FindFirstItemByType(ItemType);
 	if (!IsValid(Item)) return;
 
@@ -220,6 +256,12 @@ void UMIS_InventoryComponent::Server_AddStacksToItem_Implementation(UMIS_ItemCom
 
 void UMIS_InventoryComponent::Server_DropItem_Implementation(UMIS_InventoryItem* Item, int32 StackCount)
 {
+	if (!IsValid(Item))
+	{
+		DH_LOG_ERR("[背包组件] Server_DropItem 失败: Item 为空");
+		return;
+	}
+
 	const int32 NewStackCount = Item->GetTotalStackCount() - StackCount;
 	if (NewStackCount <= 0)
 	{
@@ -235,6 +277,19 @@ void UMIS_InventoryComponent::Server_DropItem_Implementation(UMIS_InventoryItem*
 
 void UMIS_InventoryComponent::SpawnDroppedItem(UMIS_InventoryItem* Item, int32 StackCount)
 {
+	if (!OwningController.IsValid())
+	{
+		if (APawn* OwnerPawn = Cast<APawn>(GetOwner()))
+		{
+			OwningController = OwnerPawn->GetController<APlayerController>();
+		}
+	}
+	if (!OwningController.IsValid())
+	{
+		DH_SCREEN(5.f, DHColors::Red, "[背包组件] SpawnDroppedItem 失败: OwningController 为空");
+		return;
+	}
+
 	const APawn* OwningPawn = OwningController->GetPawn();
 	if (!IsValid(OwningPawn)) return;
 

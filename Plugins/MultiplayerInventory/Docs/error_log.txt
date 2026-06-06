@@ -1,16 +1,16 @@
 CONSOLE: Use build tool: C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\amd64\MSBuild.exe
 :   : null
-21:31:55 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\UnrealBuildTool\UnrealBuildTool.csproj
-21:31:55 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Build\EpicGames.Build.csproj
-21:31:55 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Core\EpicGames.Core.csproj
-21:31:55 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Horde\EpicGames.Horde.csproj
-21:31:55 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.IoHash\EpicGames.IoHash.csproj
-21:31:56 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.OIDC\EpicGames.OIDC.csproj
-21:31:56 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Serialization\EpicGames.Serialization.csproj
-21:31:56 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UBA\EpicGames.UBA.csproj
-21:31:56 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UHT\EpicGames.UHT.csproj
-21:31:56 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.MsBuild\EpicGames.MsBuild.csproj
-21:31:56 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Oodle\EpicGames.Oodle.csproj
+21:33:19 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\UnrealBuildTool\UnrealBuildTool.csproj
+21:33:19 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Build\EpicGames.Build.csproj
+21:33:19 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Core\EpicGames.Core.csproj
+21:33:19 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Horde\EpicGames.Horde.csproj
+21:33:19 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.IoHash\EpicGames.IoHash.csproj
+21:33:20 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.OIDC\EpicGames.OIDC.csproj
+21:33:20 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Serialization\EpicGames.Serialization.csproj
+21:33:20 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UBA\EpicGames.UBA.csproj
+21:33:20 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UHT\EpicGames.UHT.csproj
+21:33:20 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.MsBuild\EpicGames.MsBuild.csproj
+21:33:20 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Oodle\EpicGames.Oodle.csproj
 EpicGames.Core -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Core\bin\Development\net8.0\EpicGames.Core.dll
 EpicGames.IoHash -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.IoHash\bin\Development\net8.0\EpicGames.IoHash.dll
 EpicGames.MsBuild -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.MsBuild\bin\Development\net8.0\EpicGames.MsBuild.dll
@@ -22,42 +22,51 @@ EpicGames.Horde -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGame
 EpicGames.UBA -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UBA\bin\Development\net8.0\EpicGames.UBA.dll
 EpicGames.UHT -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UHT\bin\Development\net8.0\EpicGames.UHT.dll
 UnrealBuildTool -> C:\UnrealEngine\UE_5.5\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll
-21:31:57 Building C:\UnrealProject\InventorySystems-main\Intermediate\ProjectFiles\InventoryProject.vcxproj
+21:33:21 Building C:\UnrealProject\InventorySystems-main\Intermediate\ProjectFiles\InventoryProject.vcxproj
 C:\UnrealEngine\UE_5.5\Engine\Build\BatchFiles\Build.bat InventoryProjectEditor Win64 Development -Project="C:\UnrealProject\InventorySystems-main\InventoryProject.uproject" -WaitMutex -FromMsBuild -architecture=x64
 Using bundled DotNet SDK version: 8.0.300
 Running UnrealBuildTool: dotnet "..\..\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" InventoryProjectEditor Win64 Development -Project="C:\UnrealProject\InventorySystems-main\InventoryProject.uproject" -WaitMutex -FromMsBuild -architecture=x64
 Log file: C:\Users\AmberIonian\AppData\Local\UnrealBuildTool\Log.txt
+Using 'git status' to determine working set for adaptive non-unity build (C:\UnrealProject\InventorySystems-main).
+Invalidating makefile for InventoryProjectEditor (working set of source files changed)
+Plugin 'MultiplayerInventory' depends on plugin 'StructUtils' which was deprecated in 5.5 and will soon be removed. Please update your dependencies.
 Parsing headers for InventoryProjectEditor
   Running Internal UnrealHeaderTool C:\UnrealProject\InventorySystems-main\InventoryProject.uproject C:\UnrealProject\InventorySystems-main\Intermediate\Build\Win64\InventoryProjectEditor\Development\InventoryProjectEditor.uhtmanifest -WarningsAsErrors -installed
-Total of 5 written
-Reflection code generated for InventoryProjectEditor in 4.897413 seconds
+Total of 3 written
+Reflection code generated for InventoryProjectEditor in 5.4955331 seconds
 Building InventoryProjectEditor...
 Using Visual Studio 2022 14.38.33145 toolchain (C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130) and Windows 10.0.22621.0 SDK (C:\Program Files (x86)\Windows Kits\10).
-[Adaptive Build] Excluded from MultiplayerInventory unity file: MultiplayerInventory.cpp, MIS_InventoryFunctionLibrary.cpp, MIS_WidgetFunctionLibrary.cpp, MIS_EquipmentComponent.cpp, MIS_EquipActor.cpp, MIS_ProxyMesh.cpp, MIS_HighlightableSkeletalMesh.cpp, MIS_HighlightableStaticMesh.cpp, MIS_InventoryComponent.cpp, MIS_FastArray.cpp, MIS_InventoryItem.cpp, MIS_ItemTags.cpp, MIS_ItemComponent.cpp, MIS_FragmentTags.cpp, MIS_ItemFragment.cpp, MIS_ItemManifest.cpp, MIS_GridTypes.cpp, MIS_CharacterDisplay.cpp, MIS_Composite.cpp, MIS_CompositeBase.cpp, MIS_Leaf.cpp, MIS_Leaf_Image.cpp, MIS_Leaf_LabeledValue.cpp, MIS_Leaf_Text.cpp, MIS_HUDWidget.cpp, MIS_InfoMessage.cpp, MIS_EquippedGridSlot.cpp, MIS_GridSlot.cpp, MIS_HoverItem.cpp, MIS_InventoryWidget.cpp, MIS_EquippedSlottedItem.cpp, MIS_SlottedItem.cpp, MIS_InventoryGrid.cpp, MIS_ItemDescription.cpp, MIS_ItemPopUp.cpp
-[Adaptive Build] Excluded from DebugHelper unity file: DebugHelper.cpp, DH_DebugFunctionLibrary.cpp
+[Adaptive Build] Excluded from InventoryProject unity file: MIS_PlayerCharacter.cpp, MIS_PlayerController.cpp
+[Adaptive Build] Excluded from MultiplayerInventory unity file: MIS_EquipmentComponent.cpp, MIS_EquipActor.cpp, MIS_InventoryComponent.cpp
 Determining max actions to execute in parallel (32 physical cores, 64 logical cores)
   Executing up to 32 processes, one per physical core
-  Requested 1.5 GB memory per action, 27.46 GB available: limiting max parallel actions to 18
-Using Unreal Build Accelerator local executor to run 11 action(s)
+  Requested 1.5 GB memory per action, 29.38 GB available: limiting max parallel actions to 19
+Using Unreal Build Accelerator local executor to run 14 action(s)
   Storage capacity 40Gb
----- Starting trace: 260605_213203 ----
+---- Starting trace: 260606_213339 ----
 UbaSessionServer - Disable remote execution (remote sessions will finish current processes)
------- Building 11 action(s) started ------
-[1/11] Compile [x64] MIS_InventoryWidget.cpp
-[2/11] Compile [x64] MIS_PlayerController.cpp
-[3/11] Compile [x64] MIS_InventoryGrid.cpp
-11>MIS_InventoryGrid.cpp(1301): Error C4458 : “HoverItem”的声明隐藏了类成员
-11>MIS_InventoryGrid.h(259): Reference C4458 : 参见“UMIS_InventoryGrid::HoverItem”的声明
-11>MIS_InventoryGrid.cpp(1304): Error C4458 : “TileSize”的声明隐藏了类成员
-11>MIS_InventoryGrid.h(253): Reference C4458 : 参见“UMIS_InventoryGrid::TileSize”的声明
-11>MIS_InventoryGrid.cpp(1324): Error C4458 : “HoverItem”的声明隐藏了类成员
-11>MIS_InventoryGrid.h(259): Reference C4458 : 参见“UMIS_InventoryGrid::HoverItem”的声明
-[4/11] Compile [x64] MIS_InventoryComponent.cpp
-[5/11] Compile [x64] MIS_PlayerCharacter.cpp
-[6/11] Link [x64] UnrealEditor-InventoryProject.lib
+------ Building 14 action(s) started ------
+[1/14] Compile [x64] Module.DebugHelper.cpp
+[2/14] Link [x64] UnrealEditor-DebugHelper.lib
+  正在创建库 C:\UnrealProject\InventorySystems-main\Plugins\DebugHelper\Intermediate\Build\Win64\x64\UnrealEditor\Development\DebugHelper\UnrealEditor-DebugHelper.lib 和对象 C:\UnrealProject\InventorySystems-main\Plugins\DebugHelper\Intermediate\Build\Win64\x64\UnrealEditor\Development\DebugHelper\UnrealEditor-DebugHelper.exp
+[3/14] Compile [x64] MIS_EquipActor.cpp
+11>MIS_EquipActor.cpp(8): Warning C4996 : 'AActor::NetUpdateFrequency': Public access to NetUpdateFrequency has been deprecated. Use SetNetUpdateFrequency() and GetNetUpdateFrequency() instead. Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+11>MIS_EquipActor.cpp(9): Warning C4996 : 'AActor::MinNetUpdateFrequency': Public access MinNetUpdateFrequency has been deprecated. Use SetMinNetUpdateFrequency() and GetMinNetUpdateFrequency() instead. Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+[4/14] Compile [x64] MIS_InventoryComponent.cpp
+11>MIS_InventoryComponent.cpp(19): Error C2065 : “NetUpdateFrequency”: 未声明的标识符
+[5/14] Link [x64] UnrealEditor-DebugHelper.dll
+   创建对象 C:\UnrealProject\InventorySystems-main\Plugins\DebugHelper\Binaries\Win64\UnrealEditor-DebugHelper.exp
+[6/14] Compile [x64] MIS_EquipmentComponent.cpp
+[7/14] Compile [x64] MIS_PlayerController.cpp
+11>MIS_PlayerController.cpp(11): Warning C4996 : 'AActor::NetUpdateFrequency': Public access to NetUpdateFrequency has been deprecated. Use SetNetUpdateFrequency() and GetNetUpdateFrequency() instead. Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+11>MIS_PlayerController.cpp(12): Warning C4996 : 'AActor::MinNetUpdateFrequency': Public access MinNetUpdateFrequency has been deprecated. Use SetMinNetUpdateFrequency() and GetMinNetUpdateFrequency() instead. Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+[8/14] Compile [x64] MIS_PlayerCharacter.cpp
+11>MIS_PlayerCharacter.cpp(22): Warning C4996 : 'AActor::NetUpdateFrequency': Public access to NetUpdateFrequency has been deprecated. Use SetNetUpdateFrequency() and GetNetUpdateFrequency() instead. Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+11>MIS_PlayerCharacter.cpp(23): Warning C4996 : 'AActor::MinNetUpdateFrequency': Public access MinNetUpdateFrequency has been deprecated. Use SetMinNetUpdateFrequency() and GetMinNetUpdateFrequency() instead. Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+[9/14] Link [x64] UnrealEditor-InventoryProject.lib
   正在创建库 C:\UnrealProject\InventorySystems-main\Intermediate\Build\Win64\x64\UnrealEditor\Development\InventoryProject\UnrealEditor-InventoryProject.lib 和对象 C:\UnrealProject\InventorySystems-main\Intermediate\Build\Win64\x64\UnrealEditor\Development\InventoryProject\UnrealEditor-InventoryProject.exp
-[7/11] Compile [x64] Module.MultiplayerInventory.cpp
-Trace file written to C:/Users/AmberIonian/AppData/Local/UnrealBuildTool/Log.uba with size 5.5kb
-Total time in Unreal Build Accelerator local executor: 7.92 seconds
-Total execution time: 13.83 seconds
+[10/14] Compile [x64] Module.MultiplayerInventory.cpp
+Trace file written to C:/Users/AmberIonian/AppData/Local/UnrealBuildTool/Log.uba with size 5.4kb
+Total time in Unreal Build Accelerator local executor: 13.23 seconds
+Total execution time: 29.78 seconds
 11>Microsoft.MakeFile.Targets(44,5): Error MSB3073 : 命令“C:\UnrealEngine\UE_5.5\Engine\Build\BatchFiles\Build.bat InventoryProjectEditor Win64 Development -Project="C:\UnrealProject\InventorySystems-main\InventoryProject.uproject" -WaitMutex -FromMsBuild -architecture=x64”已退出，代码为 6。

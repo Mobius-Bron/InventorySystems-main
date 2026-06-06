@@ -7,6 +7,9 @@
 
 AMIS_PlayerController::AMIS_PlayerController()
 {
+	SetReplicates(true);
+	SetNetUpdateFrequency(100.f);
+	SetMinNetUpdateFrequency(33.f);
 }
 
 void AMIS_PlayerController::BeginPlay()

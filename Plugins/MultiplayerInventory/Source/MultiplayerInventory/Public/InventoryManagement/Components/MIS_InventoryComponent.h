@@ -12,6 +12,7 @@ class UMIS_ItemComponent;
 class UMIS_HUDWidget;
 class UMIS_InventoryWidget;
 class APlayerController;
+class AActor;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMIS_ItemChange, UMIS_InventoryItem*, Item);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FMIS_NoRoom);
@@ -32,10 +33,10 @@ public:
 	void TryAddItem(UMIS_ItemComponent* ItemComponent);
 
 	UFUNCTION(Server, Reliable)
-	void Server_AddNewItem(UMIS_ItemComponent* ItemComponent, int32 StackCount, int32 Remainder);
+	void Server_AddNewItem(AActor* ItemActor, int32 StackCount, int32 Remainder);
 
 	UFUNCTION(Server, Reliable)
-	void Server_AddStacksToItem(UMIS_ItemComponent* ItemComponent, int32 StackCount, int32 Remainder);
+	void Server_AddStacksToItem(AActor* ItemActor, int32 StackCount, int32 Remainder);
 
 	UFUNCTION(Server, Reliable)
 	void Server_DropItem(UMIS_InventoryItem* Item, int32 StackCount);

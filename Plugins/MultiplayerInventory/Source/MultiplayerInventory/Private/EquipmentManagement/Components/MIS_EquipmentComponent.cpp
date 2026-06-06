@@ -8,6 +8,12 @@
 #include "Items/MIS_InventoryItem.h"
 #include "Items/Fragments/MIS_ItemFragment.h"
 
+UMIS_EquipmentComponent::UMIS_EquipmentComponent()
+{
+	PrimaryComponentTick.bCanEverTick = false;
+	SetIsReplicatedByDefault(true);
+}
+
 void UMIS_EquipmentComponent::SetOwningSkeletalMesh(USkeletalMeshComponent* OwningMesh)
 {
 	OwningSkeletalMesh = OwningMesh;

@@ -20,6 +20,8 @@ class MULTIPLAYERINVENTORY_API UMIS_EquipmentComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
+	UMIS_EquipmentComponent();
+
 	void SetOwningSkeletalMesh(USkeletalMeshComponent* OwningMesh);
 	void SetIsProxy(bool bProxy) { bIsProxy = bProxy; }
 	void InitializeOwner(APlayerController* PlayerController);

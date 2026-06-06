@@ -18,6 +18,10 @@ AMIS_PlayerCharacter::AMIS_PlayerCharacter()
 {
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
+	SetReplicates(true);
+	SetNetUpdateFrequency(100.f);
+	SetMinNetUpdateFrequency(33.f);
+
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
