@@ -28,6 +28,7 @@ public:
 	void SetEquippedSlottedItem(UMIS_EquippedSlottedItem* Item) { EquippedSlottedItem = Item; }
 	void SetEquipmentTypeTag(const FGameplayTag& Tag) { EquipmentTypeTag = Tag; }
 	FGameplayTag GetEquipmentTypeTag() const { return EquipmentTypeTag; }
+	void ClearEquippedState();
 
 	FMIS_EquippedGridSlotClicked EquippedGridSlotClicked;
 

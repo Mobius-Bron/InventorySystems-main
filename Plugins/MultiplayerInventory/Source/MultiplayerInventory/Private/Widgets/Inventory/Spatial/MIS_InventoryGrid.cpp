@@ -1366,6 +1366,7 @@ void UMIS_InventoryGrid::ClearSlotOfItem(UMIS_EquippedGridSlot* EquippedGridSlot
 	{
 		EquippedGridSlot->SetEquippedSlottedItem(nullptr);
 		EquippedGridSlot->SetInventoryItem(nullptr);
+		EquippedGridSlot->ClearEquippedState();
 	}
 }
 

@@ -62,5 +62,16 @@ UMIS_EquippedSlottedItem* UMIS_EquippedGridSlot::OnItemEquipped(UMIS_InventoryIt
 	UOverlaySlot* OverlaySlot = UWidgetLayoutLibrary::SlotAsOverlaySlot(EquippedSlottedItem);
 	OverlaySlot->SetPadding(FMargin(LeftPadding, TopPadding));
 
+	Image_GrayedOutIcon->SetVisibility(ESlateVisibility::Collapsed);
+	SetOccupiedTexture();
+	SetAvailable(false);
+
 	return EquippedSlottedItem;
+}
+
+void UMIS_EquippedGridSlot::ClearEquippedState()
+{
+	Image_GrayedOutIcon->SetVisibility(ESlateVisibility::Visible);
+	SetUnoccupiedTexture();
+	SetAvailable(true);
 }
