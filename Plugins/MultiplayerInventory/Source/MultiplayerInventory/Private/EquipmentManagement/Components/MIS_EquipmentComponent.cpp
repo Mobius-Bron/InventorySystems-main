@@ -1,10 +1,9 @@
 #include "EquipmentManagement/Components/MIS_EquipmentComponent.h"
 
+#include "DH_DebugFunctionLibrary.h"
 #include "EquipmentManagement/EquipActor/MIS_EquipActor.h"
-#include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
 #include "InventoryManagement/Components/MIS_InventoryComponent.h"
-#include "BlueprintFunctionLibraries/MIS_InventoryFunctionLibrary.h"
 #include "Items/MIS_InventoryItem.h"
 #include "Items/Fragments/MIS_ItemFragment.h"
 
@@ -16,95 +15,103 @@ UMIS_EquipmentComponent::UMIS_EquipmentComponent()
 
 void UMIS_EquipmentComponent::SetOwningSkeletalMesh(USkeletalMeshComponent* OwningMesh)
 {
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Cyan,
+		"[装备链路-EquipComp] SetOwningSkeletalMesh | Mesh=%s | bIsProxy=%d",
+		IsValid(OwningMesh) ? *OwningMesh->GetName() : TEXT("空"), bIsProxy);
 	OwningSkeletalMesh = OwningMesh;
 }
 
-void UMIS_EquipmentComponent::InitializeOwner(APlayerController* PlayerController)
+void UMIS_EquipmentComponent::Init(APlayerController* InPC, UMIS_InventoryComponent* InInvComp, USkeletalMeshComponent* InMesh)
 {
-	if (IsValid(PlayerController))
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+		"[装备链路-EquipComp] ========== Init (外部初始化) ==========");
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+		"[装备链路-EquipComp] PC=%s | InvComp=%s | Mesh=%s | bIsProxy=%d",
+		IsValid(InPC) ? *InPC->GetName() : TEXT("空"),
+		IsValid(InInvComp) ? *InInvComp->GetName() : TEXT("空"),
+		IsValid(InMesh) ? *InMesh->GetName() : TEXT("空"),
+		bIsProxy);
+
+	// ---- 步骤1: 持有 PlayerController ----
+	if (IsValid(InPC))
 	{
-		OwningPlayerController = PlayerController;
+		OwningPlayerController = InPC;
 	}
-	InitInventoryComponent();
-}
-
-void UMIS_EquipmentComponent::InitComponent(UMIS_InventoryComponent* InInventoryComponent)
-{
-	// MVVM 绑定入口: 订阅库存组件的装备/卸下事件
-	InventoryComponent = InInventoryComponent;
-	if (!InventoryComponent.IsValid()) return;
-
-	if (!InventoryComponent->OnItemEquipped.IsAlreadyBound(this, &ThisClass::OnItemEquipped))
+	else
 	{
-		InventoryComponent->OnItemEquipped.AddDynamic(this, &ThisClass::OnItemEquipped);
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-EquipComp] Init 警告: PlayerController 为空!");
 	}
 
-	if (!InventoryComponent->OnItemUnequipped.IsAlreadyBound(this, &ThisClass::OnItemUnequipped))
+	// ---- 步骤2: 持有并绑定 InventoryComponent ----
+	if (IsValid(InInvComp))
 	{
-		InventoryComponent->OnItemUnequipped.AddDynamic(this, &ThisClass::OnItemUnequipped);
-	}
-}
+		InventoryComponent = InInvComp;
 
-void UMIS_EquipmentComponent::BeginPlay()
-{
-	Super::BeginPlay();
-	InitPlayerController();
-}
-
-void UMIS_EquipmentComponent::InitPlayerController()
-{
-	if (OwningPlayerController.IsValid()) return;
-
-	if (OwningPlayerController = Cast<APlayerController>(GetOwner()); OwningPlayerController.IsValid())
-	{
-		if (ACharacter* OwnerCharacter = Cast<ACharacter>(OwningPlayerController->GetPawn()); IsValid(OwnerCharacter))
+		if (!InventoryComponent->OnItemEquipped.IsAlreadyBound(this, &ThisClass::OnItemEquipped))
 		{
-			OnPossessedPawnChange(nullptr, OwnerCharacter);
+			InventoryComponent->OnItemEquipped.AddDynamic(this, &ThisClass::OnItemEquipped);
+			DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+				"[装备链路-EquipComp] Init: 已绑定 OnItemEquipped");
 		}
 		else
 		{
-			OwningPlayerController->OnPossessedPawnChanged.AddDynamic(this, &ThisClass::OnPossessedPawnChange);
+			DH_PRINT(EDH_Output::Both, 4.f, DHColors::Cyan,
+				"[装备链路-EquipComp] Init: OnItemEquipped 已绑定,跳过");
+		}
+
+		if (!InventoryComponent->OnItemUnequipped.IsAlreadyBound(this, &ThisClass::OnItemUnequipped))
+		{
+			InventoryComponent->OnItemUnequipped.AddDynamic(this, &ThisClass::OnItemUnequipped);
+			DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+				"[装备链路-EquipComp] Init: 已绑定 OnItemUnequipped");
 		}
 	}
-}
-
-void UMIS_EquipmentComponent::OnPossessedPawnChange(APawn* OldPawn, APawn* NewPawn)
-{
-	if (ACharacter* OwnerCharacter = Cast<ACharacter>(NewPawn); IsValid(OwnerCharacter))
+	else
 	{
-		// 获取角色的骨骼网格体 → 装备 Actor 附着目标
-		OwningSkeletalMesh = OwnerCharacter->GetMesh();
-	}
-	InitInventoryComponent();
-}
-
-void UMIS_EquipmentComponent::InitInventoryComponent()
-{
-	if (InventoryComponent.IsValid()) return;
-
-	// 通过函数库从 PlayerController 获取库存组件
-	InventoryComponent = UMIS_InventoryFunctionLibrary::GetInventoryComponent(OwningPlayerController.Get());
-	if (!InventoryComponent.IsValid()) return;
-
-	// 绑定装备/卸下事件 (MVVM)
-	if (!InventoryComponent->OnItemEquipped.IsAlreadyBound(this, &ThisClass::OnItemEquipped))
-	{
-		InventoryComponent->OnItemEquipped.AddDynamic(this, &ThisClass::OnItemEquipped);
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-EquipComp] Init 警告: InventoryComponent 为空!");
 	}
 
-	if (!InventoryComponent->OnItemUnequipped.IsAlreadyBound(this, &ThisClass::OnItemUnequipped))
+	// ---- 步骤3: 持有 SkeletalMesh (可选的,已通过 SetOwningSkeletalMesh 设置时可传 nullptr) ----
+	if (IsValid(InMesh))
 	{
-		InventoryComponent->OnItemUnequipped.AddDynamic(this, &ThisClass::OnItemUnequipped);
+		OwningSkeletalMesh = InMesh;
+		DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+			"[装备链路-EquipComp] Init: 已持有骨骼Mesh=%s", *InMesh->GetName());
 	}
+
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+		"[装备链路-EquipComp] ========== Init 完成 | PC有效=%d | InvComp有效=%d | Mesh有效=%d ==========",
+		OwningPlayerController.IsValid(), InventoryComponent.IsValid(), OwningSkeletalMesh.IsValid());
 }
+
+// ===================== 装备 Actor 管理 =====================
 
 AMIS_EquipActor* UMIS_EquipmentComponent::SpawnEquippedActor(FMIS_EquipmentFragment* EquipmentFragment, const FMIS_ItemManifest& Manifest, USkeletalMeshComponent* AttachMesh)
 {
-	// 在骨骼网格体上生成并附着装备 3D Actor
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Cyan,
+		"[装备链路-EquipComp] >>> SpawnEquippedActor | AttachMesh=%s | TypeTag=%s",
+		IsValid(AttachMesh) ? *AttachMesh->GetName() : TEXT("空"),
+		*EquipmentFragment->GetEquipmentType().ToString());
+
 	AMIS_EquipActor* SpawnedEquipActor = EquipmentFragment->SpawnAttachedActor(AttachMesh);
-	SpawnedEquipActor->SetEquipmentType(EquipmentFragment->GetEquipmentType());
-	SpawnedEquipActor->SetOwner(GetOwner());
-	EquipmentFragment->SetEquippedActor(SpawnedEquipActor);
+
+	if (IsValid(SpawnedEquipActor))
+	{
+		SpawnedEquipActor->SetEquipmentType(EquipmentFragment->GetEquipmentType());
+		SpawnedEquipActor->SetOwner(GetOwner());
+		EquipmentFragment->SetEquippedActor(SpawnedEquipActor);
+		DH_PRINT(EDH_Output::Both, 4.f, FLinearColor::Green,
+			"[装备链路-EquipComp] SpawnEquippedActor: 生成成功! | Actor=%s | TypeTag=%s",
+			*SpawnedEquipActor->GetName(), *EquipmentFragment->GetEquipmentType().ToString());
+	}
+	else
+	{
+		DH_PRINT(EDH_Output::Both, 3.f, FLinearColor::Red,
+			"[装备链路-EquipComp] SpawnEquippedActor: 生成失败! (EquipActorClass可能为空或Spawn失败)");
+	}
+
 	return SpawnedEquipActor;
 }
 
@@ -122,52 +129,113 @@ void UMIS_EquipmentComponent::RemoveEquippedActor(const FGameplayTag& EquipmentT
 	if (AMIS_EquipActor* EquippedActor = FindEquippedActor(EquipmentTypeTag); IsValid(EquippedActor))
 	{
 		EquippedActors.Remove(EquippedActor);
-		EquippedActor->Destroy(); // 销毁 3D 装备 Actor
+		EquippedActor->Destroy();
 	}
 }
 
+// ===================== 装备/卸下事件回调 =====================
+
 void UMIS_EquipmentComponent::OnItemEquipped(UMIS_InventoryItem* EquippedItem)
 {
-	// ---- 步骤1: 获取装备片段 ----
-	if (!IsValid(EquippedItem)) return;
-	if (!OwningPlayerController->HasAuthority()) return; // 仅服务端执行
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+		"[装备链路-EquipComp] ========== OnItemEquipped 触发! ==========");
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+		"[装备链路-EquipComp] Item=%s | bIsProxy=%d | HasAuth=%d | PC=%s | Mesh=%s",
+		IsValid(EquippedItem) ? *EquippedItem->GetName() : TEXT("空"),
+		bIsProxy,
+		OwningPlayerController.IsValid() ? OwningPlayerController->HasAuthority() : -1,
+		OwningPlayerController.IsValid() ? *OwningPlayerController->GetName() : TEXT("空"),
+		OwningSkeletalMesh.IsValid() ? *OwningSkeletalMesh->GetName() : TEXT("空"));
 
-	FMIS_ItemManifest& ItemManifest = EquippedItem->GetItemManifestMutable();
-	FMIS_EquipmentFragment* EquipmentFragment = ItemManifest.GetFragmentOfTypeMutable<FMIS_EquipmentFragment>();
-	if (!EquipmentFragment) return;
-
-	// ---- 步骤2: 执行装备效果 (代理模式跳过) ----
-	if (!bIsProxy)
+	// ---- 步骤1: 验证输入 ----
+	if (!IsValid(EquippedItem))
 	{
-		// 遍历所有 EquipModifier,依次执行 OnEquip (如 +15 伤害)
-		EquipmentFragment->OnEquip(OwningPlayerController.Get());
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-EquipComp] OnItemEquipped 退出: Item为空");
+		return;
 	}
 
-	// ---- 步骤3: 在角色骨骼上生成 3D 装备 Actor ----
-	if (!OwningSkeletalMesh.IsValid()) return;
+	if (!OwningPlayerController.IsValid())
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-EquipComp] OnItemEquipped 退出: OwningPlayerController为空 (Init未调用?)");
+		return;
+	}
+
+	if (!OwningPlayerController->HasAuthority())
+	{
+		DH_PRINT(EDH_Output::Both, 3.f, FLinearColor::Yellow,
+			"[装备链路-EquipComp] OnItemEquipped 退出: 无Authority (非服务端),跳过Actor生成");
+		return;
+	}
+
+	// ---- 步骤2: 提取 EquipmentFragment ----
+	FMIS_ItemManifest& ItemManifest = EquippedItem->GetItemManifestMutable();
+	FMIS_EquipmentFragment* EquipmentFragment = ItemManifest.GetFragmentOfTypeMutable<FMIS_EquipmentFragment>();
+
+	if (!EquipmentFragment)
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-EquipComp] OnItemEquipped 退出: 物品没有EquipmentFragment! (物品=%s)",
+			*EquippedItem->GetName());
+		return;
+	}
+
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+		"[装备链路-EquipComp] EquipmentFragment获取成功 | EquipmentType=%s | bEquipped=%d",
+		*EquipmentFragment->GetEquipmentType().ToString(),
+		EquipmentFragment->bEquipped);
+
+	// ---- 步骤3: 执行装备效果 ----
+	if (!bIsProxy)
+	{
+		DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+			"[装备链路-EquipComp] 非代理模式,执行 OnEquip 效果");
+		EquipmentFragment->OnEquip(OwningPlayerController.Get());
+	}
+	else
+	{
+		DH_PRINT(EDH_Output::Both, 4.f, DHColors::Cyan,
+			"[装备链路-EquipComp] 代理模式,跳过 OnEquip 效果");
+	}
+
+	// ---- 步骤4: 生成 3D 装备 Actor ----
+	if (!OwningSkeletalMesh.IsValid())
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-EquipComp] OnItemEquipped 退出: OwningSkeletalMesh为空! (Init Mesh参数是否为nullptr?)");
+		return;
+	}
+
 	AMIS_EquipActor* SpawnedEquipActor = SpawnEquippedActor(EquipmentFragment, ItemManifest, OwningSkeletalMesh.Get());
 
-	// 记录到映射表 (同类型替换时先查找并销毁旧的)
-	EquippedActors.Add(SpawnedEquipActor);
+	if (IsValid(SpawnedEquipActor))
+	{
+		EquippedActors.Add(SpawnedEquipActor);
+		DH_PRINT(EDH_Output::Both, 4.f, FLinearColor::Green,
+			"[装备链路-EquipComp] ========== 装备完成! Actor=%s | 总数=%d ==========",
+			*SpawnedEquipActor->GetName(), EquippedActors.Num());
+	}
+	else
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-EquipComp] OnItemEquipped 失败: SpawnEquippedActor返回nullptr!");
+	}
 }
 
 void UMIS_EquipmentComponent::OnItemUnequipped(UMIS_InventoryItem* UnequippedItem)
 {
-	// ---- 步骤1: 获取装备片段 ----
 	if (!IsValid(UnequippedItem)) return;
-	if (!OwningPlayerController->HasAuthority()) return; // 仅服务端执行
+	if (!OwningPlayerController->HasAuthority()) return;
 
 	FMIS_ItemManifest& ItemManifest = UnequippedItem->GetItemManifestMutable();
 	FMIS_EquipmentFragment* EquipmentFragment = ItemManifest.GetFragmentOfTypeMutable<FMIS_EquipmentFragment>();
 	if (!EquipmentFragment) return;
 
-	// ---- 步骤2: 执行卸下效果 (代理模式跳过) ----
 	if (!bIsProxy)
 	{
-		// 遍历所有 EquipModifier,依次执行 OnUnequip (如 -15 伤害)
 		EquipmentFragment->OnUnequip(OwningPlayerController.Get());
 	}
 
-	// ---- 步骤3: 销毁 3D 装备 Actor ----
 	RemoveEquippedActor(EquipmentFragment->GetEquipmentType());
 }

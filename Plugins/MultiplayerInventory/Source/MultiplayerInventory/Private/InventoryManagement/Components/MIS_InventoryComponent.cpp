@@ -327,17 +327,35 @@ void UMIS_InventoryComponent::Server_ConsumeItem_Implementation(UMIS_InventoryIt
 
 void UMIS_InventoryComponent::Server_EquipSlotClicked_Implementation(UMIS_InventoryItem* ItemToEquip, UMIS_InventoryItem* ItemToUnequip)
 {
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+		"[装备链路-InvComp] >>> Server_EquipSlotClicked (Server RPC) | Equip=%s | Unequip=%s | Role=%d",
+		IsValid(ItemToEquip) ? *ItemToEquip->GetName() : TEXT("空"),
+		IsValid(ItemToUnequip) ? *ItemToUnequip->GetName() : TEXT("空"),
+		(int32)GetOwnerRole());
 	Multicast_EquipSlotClicked(ItemToEquip, ItemToUnequip);
 }
 
 void UMIS_InventoryComponent::Multicast_EquipSlotClicked_Implementation(UMIS_InventoryItem* ItemToEquip, UMIS_InventoryItem* ItemToUnequip)
 {
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+		"[装备链路-InvComp] >>> Multicast_EquipSlotClicked | Equip=%s | Unequip=%s | bHasEquipListener=%d",
+		IsValid(ItemToEquip) ? *ItemToEquip->GetName() : TEXT("空"),
+		IsValid(ItemToUnequip) ? *ItemToUnequip->GetName() : TEXT("空"),
+		OnItemEquipped.IsBound());
+
 	OnItemEquipped.Broadcast(ItemToEquip);
 	OnItemUnequipped.Broadcast(ItemToUnequip);
+
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+		"[装备链路-InvComp] Multicast_EquipSlotClicked 广播完成");
 }
 
 void UMIS_InventoryComponent::RequestEquipSlotClicked(UMIS_InventoryItem* ItemToEquip, UMIS_InventoryItem* ItemToUnequip)
 {
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+		"[装备链路-InvComp] >>> RequestEquipSlotClicked (Client→Server) | Equip=%s | Unequip=%s",
+		IsValid(ItemToEquip) ? *ItemToEquip->GetName() : TEXT("空"),
+		IsValid(ItemToUnequip) ? *ItemToUnequip->GetName() : TEXT("空"));
 	Server_EquipSlotClicked(ItemToEquip, ItemToUnequip);
 }
 

@@ -59,6 +59,13 @@ void AMIS_PlayerCharacter::NotifyControllerChanged()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	// ---- 装备组件初始化: Controller 就绪后传入 PC + InvComp + Mesh ----
+	if (IsValid(EquipmentComponent))
+	{
+		APlayerController* PC = Cast<APlayerController>(Controller);
+		EquipmentComponent->Init(PC, InventoryComponent, GetMesh());
+	}
 }
 
 void AMIS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

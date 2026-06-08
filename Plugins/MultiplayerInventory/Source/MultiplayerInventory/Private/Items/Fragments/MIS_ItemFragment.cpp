@@ -248,7 +248,20 @@ void FMIS_EquipmentFragment::Manifest()
 
 AMIS_EquipActor* FMIS_EquipmentFragment::SpawnAttachedActor(USkeletalMeshComponent* AttachMesh) const
 {
-	if (!IsValid(AttachMesh) || !EquipActorClass) return nullptr;
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Cyan,
+		"[装备链路-Fragment] >>> SpawnAttachedActor | AttachMesh=%s | EquipActorClass=%s | Socket=%s | World=%s",
+		IsValid(AttachMesh) ? *AttachMesh->GetName() : TEXT("空"),
+		EquipActorClass ? *EquipActorClass->GetName() : TEXT("空"),
+		*SocketAttachPoint.ToString(),
+		IsValid(AttachMesh) && AttachMesh->GetWorld() ? *AttachMesh->GetWorld()->GetName() : TEXT("空"));
+
+	if (!IsValid(AttachMesh) || !EquipActorClass)
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-Fragment] SpawnAttachedActor 退出: AttachMesh=%d | EquipActorClass=%d",
+			IsValid(AttachMesh), EquipActorClass != nullptr);
+		return nullptr;
+	}
 
 	// 在世界中生成装备 Actor
 	FActorSpawnParameters SpawnParams;
@@ -259,6 +272,15 @@ AMIS_EquipActor* FMIS_EquipmentFragment::SpawnAttachedActor(USkeletalMeshCompone
 	{
 		// 附着到骨骼网格体的指定槽位 (如 "hand_r" 右手)
 		SpawnedActor->AttachToComponent(AttachMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketAttachPoint);
+		DH_PRINT(EDH_Output::Both, 4.f, FLinearColor::Green,
+			"[装备链路-Fragment] SpawnAttachedActor: 生成并附着成功! | Actor=%s | Socket=%s",
+			*SpawnedActor->GetName(), *SocketAttachPoint.ToString());
+	}
+	else
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-Fragment] SpawnAttachedActor: SpawnActor失败! Class=%s",
+			*EquipActorClass->GetName());
 	}
 
 	return SpawnedActor;

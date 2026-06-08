@@ -1295,9 +1295,31 @@ void UMIS_InventoryGrid::BindEquippedGridSlotDelegates()
 
 void UMIS_InventoryGrid::EquippedGridSlotClicked(UMIS_EquippedGridSlot* EquippedGridSlot, const FGameplayTag& EquipmentTypeTag)
 {
-	if (!CanEquipHoverItem(EquippedGridSlot, EquipmentTypeTag)) return;
+	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
+		"[装备链路-UI] >>> 点击装备槽 | Slot=%s | Tag=%s | 有Hover=%d",
+		IsValid(EquippedGridSlot) ? *EquippedGridSlot->GetName() : TEXT("空"),
+		*EquipmentTypeTag.ToString(),
+		IsValid(HoverItem));
 
-	if (!IsValid(HoverItem)) return;
+	if (!CanEquipHoverItem(EquippedGridSlot, EquipmentTypeTag))
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-UI] 装备槽点击被CanEquipHoverItem拒绝");
+		return;
+	}
+
+	if (!IsValid(HoverItem))
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-UI] 装备槽点击失败: HoverItem为空");
+		return;
+	}
+
+	UMIS_InventoryItem* ItemToEquip = HoverItem->GetInventoryItem();
+	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
+		"[装备链路-UI] 准备装备 | Item=%s | Tag=%s",
+		IsValid(ItemToEquip) ? *ItemToEquip->GetName() : TEXT("空"),
+		*EquipmentTypeTag.ToString());
 
 	UMIS_EquippedSlottedItem* EquippedSlottedItem = EquippedGridSlot->OnItemEquipped(
 		HoverItem->GetInventoryItem(),
@@ -1308,7 +1330,15 @@ void UMIS_InventoryGrid::EquippedGridSlotClicked(UMIS_EquippedGridSlot* Equipped
 
 	if (InventoryComponent.IsValid())
 	{
-		InventoryComponent->RequestEquipSlotClicked(HoverItem->GetInventoryItem(), nullptr);
+		DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
+			"[装备链路-UI] >>> 调用 RequestEquipSlotClicked | EquipTo=%s | UnequipTo=nullptr",
+			*ItemToEquip->GetName());
+		InventoryComponent->RequestEquipSlotClicked(ItemToEquip, nullptr);
+	}
+	else
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-UI] 装备槽点击失败: InventoryComponent无效");
 	}
 
 	ClearHoverItem();
@@ -1335,12 +1365,31 @@ void UMIS_InventoryGrid::EquippedSlottedItemClicked(UMIS_EquippedSlottedItem* Eq
 {
 	OnItemUnhovered();
 
-	if (!IsValid(EquippedSlottedItem)) return;
+	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
+		"[装备链路-UI] >>> 点击已装备物品 | SlottedItem=%s",
+		IsValid(EquippedSlottedItem) ? *EquippedSlottedItem->GetName() : TEXT("空"));
 
-	if (IsValid(GetHoverItem()) && GetHoverItem()->IsStackable()) return;
+	if (!IsValid(EquippedSlottedItem))
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-UI] 点击已装备物品失败: EquippedSlottedItem为空");
+		return;
+	}
+
+	if (IsValid(GetHoverItem()) && GetHoverItem()->IsStackable())
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-UI] 点击已装备物品被拒绝: HoverItem可堆叠");
+		return;
+	}
 
 	UMIS_InventoryItem* ItemToEquip = IsValid(GetHoverItem()) ? GetHoverItem()->GetInventoryItem() : nullptr;
 	UMIS_InventoryItem* ItemToUnequip = EquippedSlottedItem->GetInventoryItem();
+
+	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
+		"[装备链路-UI] 交换装备 | EquipTo=%s | UnequipTo=%s",
+		IsValid(ItemToEquip) ? *ItemToEquip->GetName() : TEXT("空"),
+		IsValid(ItemToUnequip) ? *ItemToUnequip->GetName() : TEXT("空"));
 
 	UMIS_EquippedGridSlot* EquippedGridSlot = FindSlotWithEquippedItem(ItemToUnequip);
 	ClearSlotOfItem(EquippedGridSlot);
@@ -1396,8 +1445,19 @@ void UMIS_InventoryGrid::MakeEquippedSlottedItem(UMIS_EquippedSlottedItem* OldSl
 
 void UMIS_InventoryGrid::BroadcastSlotClickedDelegates(UMIS_InventoryItem* ItemToEquip, UMIS_InventoryItem* ItemToUnequip) const
 {
+	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
+		"[装备链路-UI] BroadcastSlotClickedDelegates | Equip=%s | Unequip=%s | InvComp有效=%d",
+		IsValid(ItemToEquip) ? *ItemToEquip->GetName() : TEXT("空"),
+		IsValid(ItemToUnequip) ? *ItemToUnequip->GetName() : TEXT("空"),
+		InventoryComponent.IsValid());
+
 	if (InventoryComponent.IsValid())
 	{
 		InventoryComponent->RequestEquipSlotClicked(ItemToEquip, ItemToUnequip);
+	}
+	else
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[装备链路-UI] BroadcastSlotClickedDelegates失败: InventoryComponent无效");
 	}
 }

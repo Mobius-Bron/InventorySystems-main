@@ -14,6 +14,12 @@ class USkeletalMeshComponent;
 struct FMIS_EquipmentFragment;
 struct FMIS_ItemManifest;
 
+/**
+ * 装备管理组件 - 负责装备 Actor 的生成/销毁与装备效果触发
+ *
+ * 初始化: 外部调用 Init(PC, InvComp, Mesh) 完成所有必要引用绑定,
+ * 不依赖 Owner 类型,可挂在 Character / PlayerController / ProxyMesh 等任意 Actor 上。
+ */
 UCLASS(ClassGroup = (Equipment), meta = (BlueprintSpawnableComponent))
 class MULTIPLAYERINVENTORY_API UMIS_EquipmentComponent : public UActorComponent
 {
@@ -22,12 +28,18 @@ class MULTIPLAYERINVENTORY_API UMIS_EquipmentComponent : public UActorComponent
 public:
 	UMIS_EquipmentComponent();
 
+	/** 设置使用的骨骼网格体 (独立调用,如构造时 Mesh 已就绪) */
 	void SetOwningSkeletalMesh(USkeletalMeshComponent* OwningMesh);
+	/** 标记为代理模式 (ProxyMesh 专用,跳过 OnEquip 效果执行) */
 	void SetIsProxy(bool bProxy) { bIsProxy = bProxy; }
-	void InitializeOwner(APlayerController* PlayerController);
-	void InitComponent(UMIS_InventoryComponent* InInventoryComponent);
 
-	virtual void BeginPlay() override;
+	/**
+	 * 统一初始化入口
+	 * @param InPC         玩家控制器
+	 * @param InInvComp    库存组件
+	 * @param InMesh       骨骼网格体 (可选,已通过 SetOwningSkeletalMesh 设置时可传 nullptr)
+	 */
+	void Init(APlayerController* InPC, UMIS_InventoryComponent* InInvComp, USkeletalMeshComponent* InMesh = nullptr);
 
 private:
 	TWeakObjectPtr<UMIS_InventoryComponent> InventoryComponent;
@@ -40,8 +52,6 @@ private:
 	UFUNCTION()
 	void OnItemUnequipped(UMIS_InventoryItem* UnequippedItem);
 
-	void InitPlayerController();
-	void InitInventoryComponent();
 	AMIS_EquipActor* SpawnEquippedActor(FMIS_EquipmentFragment* EquipmentFragment, const FMIS_ItemManifest& Manifest, USkeletalMeshComponent* AttachMesh);
 
 	UPROPERTY()
@@ -49,9 +59,6 @@ private:
 
 	AMIS_EquipActor* FindEquippedActor(const FGameplayTag& EquipmentTypeTag);
 	void RemoveEquippedActor(const FGameplayTag& EquipmentTypeTag);
-
-	UFUNCTION()
-	void OnPossessedPawnChange(APawn* OldPawn, APawn* NewPawn);
 
 	bool bIsProxy{false};
 };

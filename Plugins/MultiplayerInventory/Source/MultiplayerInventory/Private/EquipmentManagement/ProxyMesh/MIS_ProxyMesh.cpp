@@ -1,6 +1,7 @@
 #include "EquipmentManagement/ProxyMesh/MIS_ProxyMesh.h"
 
 #include "EquipmentManagement/Components/MIS_EquipmentComponent.h"
+#include "InventoryManagement/Components/MIS_InventoryComponent.h"
 #include "GameFramework/Character.h"
 
 AMIS_ProxyMesh::AMIS_ProxyMesh()
@@ -58,7 +59,14 @@ void AMIS_ProxyMesh::DelayedInitializeOwner()
 	Mesh->SetSkeletalMesh(SourceMesh->GetSkeletalMeshAsset());
 	Mesh->SetAnimInstanceClass(SourceMesh->GetAnimInstance()->GetClass());
 
-	EquipmentComponent->InitializeOwner(PC);
+	// 查找 InventoryComponent (可能在 Character 或 PlayerController 上)
+	UMIS_InventoryComponent* InvComp = Character->FindComponentByClass<UMIS_InventoryComponent>();
+	if (!IsValid(InvComp))
+	{
+		InvComp = PC->FindComponentByClass<UMIS_InventoryComponent>();
+	}
+
+	EquipmentComponent->Init(PC, InvComp);
 }
 
 void AMIS_ProxyMesh::DelayedInitialization()
