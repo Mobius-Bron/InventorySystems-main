@@ -26,9 +26,9 @@
   - 继承: 无 (USTRUCT)
   - 职责: 物品的完整配置数据容器,包含所有 Fragment 列表
   - 关键方法:
-    Manifest()          — 从配置创建运行时 UObject
-    AssimilateFragments() — 将 Fragment 数据注入 UI 组合控件
-    GetFragmentOfType<>() — 模板方法,按类型查找 Fragment
+    Manifest()                  — 从配置创建运行时 UObject
+    AssimilateInventoryFragments() — 将 Fragment 数据注入 UI 组合控件
+    GetFragmentOfType<>()       — 模板方法,按类型查找 Fragment
 
 ### UMIS_InventoryItem (运行时物品对象)
   - 继承: UObject
@@ -38,22 +38,22 @@
 
 ### UMIS_InventoryComponent (库存组件 - ViewModel)
   - 继承: UActorComponent
-  - 附着对象: PlayerController
+  - 附着对象: PlayerCharacter
   - 职责: 库存的数据管理和业务逻辑核心
   - 核心命令:
     TryAddItem(ItemComponent)           — 尝试拾取物品
+    PrimaryInteract()                   — 拾取当前瞄准的物品
+    ToggleInventory()                   — 开关库存界面
+    TraceForItem()                      — 射线检测拾取目标 (每帧调用)
     RequestConsumeItem(Item)            — 请求消耗物品
     RequestDropItem(Item, StackCount)   — 请求丢弃物品
-    RequestEquipItem(ToEquip, ToUnequip)— 请求装备/卸下物品
-    RequestToggleInventory()            — 请求开关库存界面
-    SetupPlayerInput(Input)             — 绑定输入 Action
+    RequestEquipSlotClicked(ToEquip, ToUnequip) — 请求装备/卸下物品 (Server RPC)
+    SpawnDroppedItem(Item, StackCount)  — 在世界中生成掉落物品
   - 核心委托:
     OnItemAdded / OnItemRemoved         — 物品增删通知
     OnStackChange                       — 堆叠数量变化通知
     OnItemEquipped / OnItemUnequipped   — 装备状态变化通知
-    OnInventoryToggledRequest           — 库存开关请求
-    OnPickupMessage / OnHidePickupMessage — 拾取提示信息
-  - 私有功能: Tick中自动执行射线检测,管理所有 Server RPC
+    NoRoomInInventory                   — 背包已满通知
 
 ### UMIS_ItemComponent (物品拾取组件)
   - 继承: UActorComponent
@@ -62,11 +62,17 @@
 
 ### UMIS_EquipmentComponent (装备管理组件)
   - 继承: UActorComponent
-  - 附着对象: PlayerController (或 AInv_ProxyMesh)
+  - 附着对象: 任意 Actor (Character / PlayerController / ProxyMesh)
   - 职责: 监听装备事件,在角色骨骼上生成/销毁 3D 装备 Actor
   - 关键方法:
-    InitComponent(InventoryComponent)   — 绑定库存组件的装备事件
-    InitializeOwner(PC)                 — 初始化并获取角色骨骼网格体
+    SetOwningSkeletalMesh(Mesh)         — 提前设置骨骼网格体 (如构造时 Mesh 已就绪)
+    SetIsProxy(bProxy)                  — 标记为代理模式 (ProxyMesh 专用,跳过属性效果)
+    Init(PC, InvComp, Mesh)             — 统一初始化入口,传入所需的所有引用
+  - Init 参数说明:
+    InPC:       玩家控制器 (用于 HasAuthority 检查和 OnEquip 效果)
+    InInvComp:  库存组件 (用于绑定 OnItemEquipped/Unequipped 委托)
+    InMesh:     骨骼网格体 (可选,已通过 SetOwningSkeletalMesh 设置时可传 nullptr)
+  - 代理模式 (bIsProxy=true): 只生成 3D Actor 显示装备外观,不执行属性修改
 
 ## 三、Actor 层
 
@@ -78,6 +84,7 @@
   - 继承: AActor
   - 职责: 复制玩家角色的骨骼网格体和动画蓝图,在库存界面中展示
   - 自带 UMIS_EquipmentComponent (代理模式,不执行属性修改)
+  - 初始化: DelayedInitializeOwner() 中延迟获取 PC 和 Mesh,调用 EquipmentComponent->Init()
 
 ## 四、接口层
 
@@ -99,7 +106,7 @@
   - 继承: UBlueprintFunctionLibrary
   - 职责: 提供库存相关的蓝图可调用工具函数
   - 关键函数:
-    GetInventoryComponent(PC)   — 通过 PlayerController 获取库存组件
+    GetInventoryComponent(PC)   — 通过 PlayerController 获取库存组件 (FindComponentByClass)
     ForEach2D<>()               — 二维网格遍历模板函数
 
 ### UMIS_WidgetFunctionLibrary (Widget 工具函数库)
@@ -124,11 +131,12 @@
 
 ### UMIS_InventoryGrid (库存网格)
   - 继承: UUserWidget
-  - 职责: 网格布局,物品放置/拖拽/堆叠,空间查询,右键菜单
+  - 职责: 网格布局,物品放置/拖拽/堆叠,空间查询,右键菜单,装备操作
   - 关键方法:
     InitFromComponent(Comp, Canvas) — 绑定 ViewModel + 画布
     HasRoomForItem() / DropItem()
     PickUp() / AssignHoverItem()
+    EquippedGridSlotClicked() / EquippedSlottedItemClicked() — 装备/卸下处理
   - 特色: NativePreConstruct() 在编辑器中预构建网格
 
 ### UMIS_GridSlot (网格槽位)
@@ -158,8 +166,11 @@
   - 职责: 右键物品时弹出的菜单,提供拆分/丢弃/消耗操作
 
 ### UMIS_ItemDescription (物品详情提示)
-  - 继承: UUserWidget
+  - 继承: UMIS_Composite
   - 职责: 鼠标悬停时显示物品详细信息的悬浮框
+  - 两个独立实例:
+    ItemDescription (ItemDescriptionClass)          — 当前悬停物品的描述
+    EquippedItemDescription (EquippedItemDescriptionClass) — 已装备物品的对比描述
 
 ### UMIS_CharacterDisplay (角色旋转预览)
   - 继承: UUserWidget

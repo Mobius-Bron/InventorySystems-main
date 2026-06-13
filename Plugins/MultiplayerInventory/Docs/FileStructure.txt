@@ -5,6 +5,9 @@
 提供空间网格库存、装备系统、消耗品系统、物品拾取与丢弃等功能。
 所有类的前缀均为 MIS_ (Multiplayer Inventory System),避免与现有项目命名冲突。
 
+配套 DebugHelper 插件 (Plugins/DebugHelper) 提供运行时调试诊断,
+在装备/拾取/丢弃等关键链路均有内置诊断输出。
+
 ## 目录结构
 
 ```
@@ -14,6 +17,12 @@ MultiplayerInventory/
 │   └── Icon128.png                           # 插件图标
 ├── Binaries/                                 # 编译产物 (自动生成)
 ├── Intermediate/                             # 中间文件 (自动生成)
+├── Docs/                                     # 文档
+│   ├── FileStructure.txt                     # 文件结构说明
+│   ├── ClassView.txt                         # 类视图文档
+│   ├── DataFlow.txt                          # 数据运行流文档
+│   ├── UsageGuide.txt                        # 使用说明
+│   └── error_log.txt                         # 编译错误记录
 └── Source/MultiplayerInventory/
     ├── MultiplayerInventory.Build.cs         # 模块构建配置 (依赖声明)
     ├── Public/                               # 公开头文件
@@ -45,14 +54,14 @@ MultiplayerInventory/
     │   │
     │   ├── EquipmentManagement/              # 装备管理层
     │   │   ├── Components/
-    │   │   │   └── MIS_EquipmentComponent.h  # 装备管理组件
+    │   │   │   └── MIS_EquipmentComponent.h  # 装备管理组件 (通过 Init 统一初始化)
     │   │   ├── EquipActor/
     │   │   │   └── MIS_EquipActor.h          # 装备 3D Actor (附着角色骨骼)
     │   │   └── ProxyMesh/
     │   │       └── MIS_ProxyMesh.h           # 库存 UI 中角色预览代理
     │   │
     │   ├── Interaction/                      # 交互层 (拾取高亮)
-    │   │   ├── MIS_Highlightable.h           # 高亮接口 (IInterface)
+    │   │   ├── MIS_Highlightable.h           # 高亮接口 (UInterface)
     │   │   ├── MIS_HighlightableStaticMesh.h # 静态网格体高亮组件
     │   │   └── MIS_HighlightableSkeletalMesh.h # 骨骼网格体高亮组件
     │   │
@@ -80,7 +89,7 @@ MultiplayerInventory/
     │       ├── ItemPopUp/
     │       │   └── MIS_ItemPopUp.h           # 右键弹出菜单 (拆分/丢弃/消耗)
     │       ├── ItemDescription/
-    │       │   └── MIS_ItemDescription.h     # 物品详情悬浮提示
+    │       │   └── MIS_ItemDescription.h     # 物品详情悬浮提示 (继承 UMIS_Composite)
     │       ├── CharacterDisplay/
     │       │   └── MIS_CharacterDisplay.h    # 角色模型旋转预览
     │       └── HUD/
@@ -104,3 +113,32 @@ MultiplayerInventory/
 +--------------------------+
 |  MIS_FastArray            |  ← 网络层: 高效增量复制
 +--------------------------+
+|  Server RPC / Multicast   |  ← 网络通信: Client→Server→AllClients
++--------------------------+
+
+## 项目集成架构 (InventoryProject)
+
+```
+Source/InventoryProject/           # 游戏项目代码
+├── MIS_PlayerCharacter.h/cpp      # 玩家角色 (持有 InvComp + EquipComp)
+├── MIS_PlayerController.h/cpp     # 玩家控制器 (HUD Widget 管理)
+├── MIS_GameMode.h/cpp             # 游戏模式
+└── InventoryProject.build.cs      # 项目构建配置
+
+Plugins/
+├── MultiplayerInventory/          # 库存系统插件
+└── DebugHelper/                   # 调试诊断插件
+```
+
+## 关键设计决策
+
+1. **组件附着策略**: InventoryComponent 和 EquipmentComponent 推荐放在 Character 上,
+   EquipmentComponent 通过 Init(PC, InvComp, Mesh) 从外部传入所需引用,不依赖 Owner 类型。
+
+2. **装备初始化**: 在 NotifyControllerChanged 中调用 Init (Controller 已就绪)。
+
+3. **ProxyMesh 代理模式**: ProxyMesh 自带独立的 EquipmentComponent (bIsProxy=true),
+   Init 时不执行属性修改效果,只负责 3D Actor 的视觉生成。
+
+4. **网络通信**: 所有装备/卸下操作走 Server RPC → Multicast RPC 模式,
+   确保服务端和所有客户端同步执行。

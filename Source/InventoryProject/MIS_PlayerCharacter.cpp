@@ -60,10 +60,14 @@ void AMIS_PlayerCharacter::NotifyControllerChanged()
 		}
 	}
 
-	// ---- 装备组件初始化: Controller 就绪后传入 PC + InvComp + Mesh ----
+	// ---- 组件初始化: Controller 就绪后传入必要的引用 ----
+	APlayerController* PC = Cast<APlayerController>(Controller);
+	if (IsValid(InventoryComponent))
+	{
+		InventoryComponent->Init(PC);
+	}
 	if (IsValid(EquipmentComponent))
 	{
-		APlayerController* PC = Cast<APlayerController>(Controller);
 		EquipmentComponent->Init(PC, InventoryComponent, GetMesh());
 	}
 }

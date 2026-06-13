@@ -19,6 +19,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FMIS_NoRoom);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMIS_StackChange, const FMIS_SlotAvailabilityResult&, Result);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMIS_EquipStatusChanged, UMIS_InventoryItem*, Item);
 
+/**
+ * 库存核心组件 (ViewModel)
+ *
+ * 初始化: 外部调用 Init(PC) 传入 PlayerController,不依赖 Owner 类型,
+ * 可挂在 Character / PlayerController 等任意 Actor 上。
+ * 后续通过 SetHUDWidget / SetInventoryWidget 绑定 UI。
+ */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), Blueprintable)
 class MULTIPLAYERINVENTORY_API UMIS_InventoryComponent : public UActorComponent
 {
@@ -27,7 +34,9 @@ class MULTIPLAYERINVENTORY_API UMIS_InventoryComponent : public UActorComponent
 public:
 	UMIS_InventoryComponent();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	virtual void BeginPlay() override;
+
+	/** 初始化 — 传入 PlayerController 引用 */
+	void Init(APlayerController* InPC);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory")
 	void TryAddItem(UMIS_ItemComponent* ItemComponent);

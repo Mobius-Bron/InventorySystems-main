@@ -24,13 +24,22 @@ void UMIS_InventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ThisClass, InventoryList);
 }
 
-void UMIS_InventoryComponent::BeginPlay()
+void UMIS_InventoryComponent::Init(APlayerController* InPC)
 {
-	Super::BeginPlay();
+	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Cyan,
+		"[背包组件] >>> Init (外部初始化) | PC=%s",
+		IsValid(InPC) ? *InPC->GetName() : TEXT("空"));
 
-	if (APawn* Pawn = Cast<APawn>(GetOwner()))
+	if (IsValid(InPC))
 	{
-		OwningController = Pawn->GetController<APlayerController>();
+		OwningController = InPC;
+		DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
+			"[背包组件] Init 完成 | PC有效=1");
+	}
+	else
+	{
+		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
+			"[背包组件] Init 警告: PlayerController 为空!");
 	}
 }
 
@@ -279,14 +288,7 @@ void UMIS_InventoryComponent::SpawnDroppedItem(UMIS_InventoryItem* Item, int32 S
 {
 	if (!OwningController.IsValid())
 	{
-		if (APawn* OwnerPawn = Cast<APawn>(GetOwner()))
-		{
-			OwningController = OwnerPawn->GetController<APlayerController>();
-		}
-	}
-	if (!OwningController.IsValid())
-	{
-		DH_SCREEN(5.f, DHColors::Red, "[背包组件] SpawnDroppedItem 失败: OwningController 为空");
+		DH_SCREEN(5.f, DHColors::Red, "[背包组件] SpawnDroppedItem 失败: OwningController 为空 (Init未调用?)");
 		return;
 	}
 

@@ -2,21 +2,21 @@
 
 ## 流程一: 玩家拾取物品
 
-触发: 玩家按下 MainInteract 键
+触发: 玩家按下 PrimaryInteract 键
 |
 1. 按键输入
-   UMIS_InventoryComponent::SetupPlayerInput() 中绑定了 PrimaryInteractAction
-   → 调用 UMIS_InventoryComponent::PrimaryInteract()
+   AMIS_PlayerCharacter::PrimaryInteract()
+   → InventoryComponent->PrimaryInteract()
 |
-2. 射线检测 (每帧自动运行)
-   UMIS_InventoryComponent::TickComponent()
-   → TraceForItem()
+2. 射线检测 (每帧在 Look 中运行)
+   AMIS_PlayerCharacter::Look() 中每帧调用:
+   → InventoryComponent->TraceForItem()
       从屏幕中心发射 LineTraceSingleByChannel 射线
       → 命中 Actor 的 UMIS_ItemComponent 组件
       → 命中高亮 Actor → IMIS_Highlightable::Highlight()
-      → 广播 OnPickupMessage(拾取提示文本)
+      → HUDWidget->ShowPickupMessage(拾取提示文本)
       → 离开时 → IMIS_Highlightable::UnHighlight()
-      → 广播 OnHidePickupMessage()
+      → HUDWidget->HidePickupMessage()
 |
 3. 拾取物品
    PrimaryInteract() → TryAddItem(ItemComponent)
@@ -82,11 +82,10 @@
      → 如果是不同物品且可交换:
          SwapWithHoverItem()
    在空白区域点击鼠标:
-     → UMIS_InventoryWidget::NativeOnMouseButtonDown()
-     → DropItem() — 放置 HoverItem 到当前位置
+     → OnGridSlotClicked → PutDownOnIndex() — 放到空位
    在背包外区域放下:
-     → 原路径: InventoryComponent->RequestDropItem() (丢弃)
-     → 修改后: PutHoverItemBack() (放回原位)
+     → InventoryWidget::NativeOnMouseButtonDown → InventoryGrid::DropItem()
+       → RequestDropItem() — 丢弃物品
 
 
 ## 流程三: 玩家装备物品
@@ -94,16 +93,16 @@
 触发: 拖起装备物品,点击装备栏槽位
 |
 1. 装备槽位点击
-   UMIS_EquippedGridSlot::NativeOnMouseButtonDown()
+   UMIS_EquippedGridSlot 点击
    → EquippedGridSlotClicked.Broadcast(this, EquipmentTypeTag)
-   → UMIS_InventoryWidget::EquippedGridSlotClicked()
+   → UMIS_InventoryGrid::EquippedGridSlotClicked()
 |
 2. 校验是否可以装备
    CanEquipHoverItem(EquippedGridSlot, EquipmentTypeTag)
      → 槽位是否为空?
      → HoverItem 是否非堆叠?
-     → HoverItem 是否有 EquipmentFragment?
-     → EquipmentType 是否匹配槽位的 EquipmentTypeTag?
+     → HoverItem 是否有 FMIS_EquipmentFragment?
+     → Fragment->GetEquipmentType() 是否匹配槽位的 EquipmentTypeTag?
 |
 3. 创建装备图标
    EquippedGridSlot->OnItemEquipped(Item, EquipmentTag, TileSize)
@@ -112,19 +111,23 @@
      → 设置图标、尺寸、叠加到 Overlay_Root
 |
 4. 服务端通信
-   InventoryComponent->RequestEquipItem(HoverItem, nullptr)
-     → Server_EquipSlotClicked(ItemToEquip, ItemToUnequip)
-     → Multicast → OnItemEquipped.Broadcast(Item)
-     → OnItemUnequipped.Broadcast(nullptr)
+   InventoryComponent->RequestEquipSlotClicked(HoverItem, nullptr)
+     → Server_EquipSlotClicked(ItemToEquip, ItemToUnequip) (Server RPC)
+     → Multicast_EquipSlotClicked() (Multicast RPC)
+       → OnItemEquipped.Broadcast(Item)
+       → OnItemUnequipped.Broadcast(nullptr)
 |
 5. 装备组件响应
    UMIS_EquipmentComponent::OnItemEquipped(Item)
+     先决条件: EquipmentComponent 已通过 Init(PC, InvComp, Mesh) 初始化并绑定委托
      → 获取 FMIS_EquipmentFragment
-     → EquipmentFragment->OnEquip(PC)
-         遍历 EquipModifiers → 执行所有装备效果
-     → SpawnAttachedActor(AttachMesh)
-         在世界中生成 AInv_EquipActor
-         附着到角色骨骼的 SocketAttachPoint
+     → 非代理模式: EquipmentFragment->OnEquip(PC)
+         遍历 EquipModifiers → 执行所有装备效果 (如 +15 伤害)
+     → SpawnEquippedActor()
+       → EquipmentFragment->SpawnAttachedActor(AttachMesh)
+           在世界中生成 AMIS_EquipActor
+           附着到角色骨骼的 SocketAttachPoint
+     → EquippedActors.Add(SpawnedEquipActor)
 |
 6. HoverItem 清除
    InventoryGrid->ClearHoverItem()
@@ -135,24 +138,26 @@
 触发: 点击装备栏上已装备的物品图标
 |
 1. 点击检测
-   UMIS_EquippedSlottedItem::NativeOnMouseButtonDown()
+   UMIS_EquippedSlottedItem 点击
    → OnEquippedSlottedItemClicked.Broadcast(this)
-   → UMIS_InventoryWidget::EquippedSlottedItemClicked()
+   → UMIS_InventoryGrid::EquippedSlottedItemClicked()
 |
 2. 卸下处理
    → 获取已装备物品 → AssignHoverItem (放回鼠标)
    → ClearSlotOfItem(EquippedGridSlot) — 清除槽位
    → RemoveEquippedSlottedItem(SlottedItem) — 移除图标
+   → MakeEquippedSlottedItem() — 如果 HoverItem 有装备物品则创建新图标
 |
 3. 服务端通信
-   BroadcastSlotClickedDelegates(nullptr, ItemToUnequip)
-     → RequestEquipItem(nullptr, ItemToUnequip)
-     → OnItemUnequipped.Broadcast(Item)
+   BroadcastSlotClickedDelegates(ItemToEquip, ItemToUnequip)
+     → RequestEquipSlotClicked(ItemToEquip, ItemToUnequip)
+     → OnItemEquipped.Broadcast(ItemToEquip)
+     → OnItemUnequipped.Broadcast(ItemToUnequip)
 |
 4. 装备组件响应
    UMIS_EquipmentComponent::OnItemUnequipped(Item)
      → FMIS_EquipmentFragment->OnUnequip(PC)
-         遍历 EquipModifiers → 撤销所有装备效果
+         遍历 EquipModifiers → 撤销所有装备效果 (如 -15 伤害)
      → RemoveEquippedActor(EquipmentType)
          销毁 3D 装备 Actor
 
@@ -184,29 +189,53 @@
 触发: 按 ToggleInventory 键
 |
 1. 按键触发
-   UMIS_InventoryComponent::RequestToggleInventory()
-   → OnInventoryToggledRequest.Broadcast()
+   AMIS_PlayerCharacter::ToggleInventory()
+   → InventoryComponent->ToggleInventory()
 |
-2. 外部系统响应 (由项目代码自行实现)
-   监听 OnInventoryToggledRequest 委托:
-     → 如果界面关闭 → Widget->OpenInventory()
-         SetVisibility(Visible)
-         SetInputMode(GameAndUI) + ShowMouseCursor
-     → 如果界面打开 → Widget->CloseInventory()
-         SetVisibility(Collapsed)
-         Grid->OnHide() — PutHoverItemBack()
-         SetInputMode(GameOnly) + HideMouseCursor
+2. InventoryComponent 处理
+   → 如果界面关闭 → InventoryWidget->OpenInventory()
+       SetVisibility(Visible)
+       ShowCursor()
+       SetInputMode(GameAndUI) + ShowMouseCursor
+   → 如果界面打开 → InventoryWidget->CloseInventory()
+       SetVisibility(Collapsed)
+       Grid->OnHide() — PutHoverItemBack()
+       HideCursor()
+       SetInputMode(GameOnly) + HideMouseCursor
+
+
+## 流程七: EquipmentComponent 初始化
+
+触发: 角色 Controller 就绪后
+|
+1. Character::NotifyControllerChanged()
+   → EquipmentComponent->Init(PC, InventoryComponent, GetMesh())
+|
+2. Init 内部执行:
+   → 持有 OwningPlayerController (用于 HasAuthority 判断)
+   → 持有 InventoryComponent 并绑定:
+       OnItemEquipped.AddDynamic(this, &UMIS_EquipmentComponent::OnItemEquipped)
+       OnItemUnequipped.AddDynamic(this, &UMIS_EquipmentComponent::OnItemUnequipped)
+   → 持有 OwningSkeletalMesh (用于装备 Actor 附着)
+|
+3. ProxyMesh 路径 (代理模式):
+   → DelayedInitializeOwner() 中延迟获取 PC 和 CharacterMesh
+   → Mesh 已在构造函数中通过 SetOwningSkeletalMesh() 设置
+   → EquipmentComponent->Init(PC, InvComp) — Mesh 参数传 nullptr (已预设)
+   → 代理模式下 bIsProxy=true,OnItemEquipped 只生成 Actor 不执行属性效果
 
 
 ## 数据流图示
 
   [玩家输入] → [HoverItem/GridSlot点击]
        ↓
-  [InventoryWidget] → [InventoryGrid]     ← UI 层
+  [InventoryWidget → InventoryGrid]     ← UI 层
        ↓                   ↓
   [Request 命令] ────→ [InventoryComponent] ← ViewModel
        ↓                   ↓
   [Server RPC] ──────→ [服务端 InventoryComponent]
+       ↓                   ↓
+  [Multicast RPC] ───→ [EquipmentComponent.OnItemEquipped]
        ↓                   ↓
   [FastArray 复制] ←─→ [客户端 InventoryList]
        ↓
