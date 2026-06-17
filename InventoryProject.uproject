@@ -25,6 +25,10 @@
 		{
 			"Name": "MultiplayerInventory",
 			"Enabled": true
+		},
+		{
+			"Name": "DebugSystem",
+			"Enabled": true
 		}
 	]
 }

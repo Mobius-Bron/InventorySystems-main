@@ -1,0 +1,75 @@
+CONSOLE: Use build tool: C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\amd64\MSBuild.exe
+:   : null
+22:21:31 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\UnrealBuildTool\UnrealBuildTool.csproj
+22:21:31 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Build\EpicGames.Build.csproj
+22:21:31 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Core\EpicGames.Core.csproj
+22:21:31 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Horde\EpicGames.Horde.csproj
+22:21:31 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.IoHash\EpicGames.IoHash.csproj
+22:21:31 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.OIDC\EpicGames.OIDC.csproj
+22:21:31 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Serialization\EpicGames.Serialization.csproj
+22:21:31 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UBA\EpicGames.UBA.csproj
+22:21:31 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UHT\EpicGames.UHT.csproj
+22:21:31 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.MsBuild\EpicGames.MsBuild.csproj
+22:21:31 Building C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Oodle\EpicGames.Oodle.csproj
+EpicGames.Core -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Core\bin\Development\net8.0\EpicGames.Core.dll
+EpicGames.IoHash -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.IoHash\bin\Development\net8.0\EpicGames.IoHash.dll
+EpicGames.MsBuild -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.MsBuild\bin\Development\net8.0\EpicGames.MsBuild.dll
+EpicGames.Build -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Build\bin\Development\net8.0\EpicGames.Build.dll
+EpicGames.OIDC -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.OIDC\bin\Development\net8.0\EpicGames.OIDC.dll
+EpicGames.Oodle -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Oodle\bin\Development\net8.0\EpicGames.Oodle.dll
+EpicGames.Serialization -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Serialization\bin\Development\net8.0\EpicGames.Serialization.dll
+EpicGames.Horde -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.Horde\bin\Development\net8.0\EpicGames.Horde.dll
+EpicGames.UBA -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UBA\bin\Development\net8.0\EpicGames.UBA.dll
+EpicGames.UHT -> C:\UnrealEngine\UE_5.5\Engine\Source\Programs\Shared\EpicGames.UHT\bin\Development\net8.0\EpicGames.UHT.dll
+UnrealBuildTool -> C:\UnrealEngine\UE_5.5\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll
+22:21:33 Building C:\UnrealProject\InventorySystems-main\Intermediate\ProjectFiles\InventoryProject.vcxproj
+C:\UnrealEngine\UE_5.5\Engine\Build\BatchFiles\Build.bat InventoryProjectEditor Win64 Development -Project="C:\UnrealProject\InventorySystems-main\InventoryProject.uproject" -WaitMutex -FromMsBuild -architecture=x64
+Using bundled DotNet SDK version: 8.0.300
+Running UnrealBuildTool: dotnet "..\..\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" InventoryProjectEditor Win64 Development -Project="C:\UnrealProject\InventorySystems-main\InventoryProject.uproject" -WaitMutex -FromMsBuild -architecture=x64
+Log file: C:\Users\AmberIonian\AppData\Local\UnrealBuildTool\Log.txt
+Using 'git status' to determine working set for adaptive non-unity build (C:\UnrealProject\InventorySystems-main).
+Creating makefile for InventoryProjectEditor (.uproject file is newer)
+Plugin 'MultiplayerInventory' depends on plugin 'StructUtils' which was deprecated in 5.5 and will soon be removed. Please update your dependencies.
+Parsing headers for InventoryProjectEditor
+  Running Internal UnrealHeaderTool C:\UnrealProject\InventorySystems-main\InventoryProject.uproject C:\UnrealProject\InventorySystems-main\Intermediate\Build\Win64\InventoryProjectEditor\Development\InventoryProjectEditor.uhtmanifest -WarningsAsErrors -installed
+Total of 6 written
+Reflection code generated for InventoryProjectEditor in 1.4020949 seconds
+Building InventoryProjectEditor...
+Using Visual Studio 2022 14.38.33145 toolchain (C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130) and Windows 10.0.22621.0 SDK (C:\Program Files (x86)\Windows Kits\10).
+[Adaptive Build] Excluded from DebugSystem unity file: DebugSystem.cpp, DS_DebugFunctionLibrary.cpp, PerModuleInline.gen.cpp, DebugSystem.init.gen.cpp, DS_DebugFunctionLibrary.gen.cpp, DS_DebugSettings.gen.cpp
+Determining max actions to execute in parallel (32 physical cores, 64 logical cores)
+  Executing up to 32 processes, one per physical core
+  Requested 1.5 GB memory per action, 30.66 GB available: limiting max parallel actions to 20
+Using Unreal Build Accelerator local executor to run 14 action(s)
+  Storage capacity 40Gb
+---- Starting trace: 260617_222139 ----
+UbaSessionServer - Disable remote execution (remote sessions will finish current processes)
+------ Building 14 action(s) started ------
+[1/14] Link [x64] UnrealEditor-InventoryProject.lib
+  正在创建库 C:\UnrealProject\InventorySystems-main\Intermediate\Build\Win64\x64\UnrealEditor\Development\InventoryProject\UnrealEditor-InventoryProject.lib 和对象 C:\UnrealProject\InventorySystems-main\Intermediate\Build\Win64\x64\UnrealEditor\Development\InventoryProject\UnrealEditor-InventoryProject.exp
+[2/14] Compile [x64] DS_DebugFunctionLibrary.cpp
+11>DS_DebugSettings.h(37): Error C4309 : “初始化”: 截断常量值
+11>DS_DebugSettings.h(37): Error C4369 : “EDS_System::Custom4”: 枚举数的值“-2147483648”不能表示为“unsigned int”，值是“-2147483648”
+11>DS_DebugFunctionLibrary.cpp(6): Error C4430 : 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+11>DS_DebugFunctionLibrary.cpp(6): Error C2146 : 语法错误: 缺少“;”(在标识符“LogDS”的前面)
+11>DS_DebugFunctionLibrary.cpp(101): Error C2065 : “LogDS”: 未声明的标识符
+[3/14] Compile [x64] PerModuleInline.gen.cpp
+[4/14] Compile [x64] DebugSystem.init.gen.cpp
+[5/14] Compile [x64] DebugSystem.cpp
+[6/14] Compile [x64] DS_DebugSettings.gen.cpp
+11>DS_DebugSettings.h(37): Error C4309 : “初始化”: 截断常量值
+11>DS_DebugSettings.h(37): Error C4369 : “EDS_System::Custom4”: 枚举数的值“-2147483648”不能表示为“unsigned int”，值是“-2147483648”
+[7/14] Compile [x64] DS_DebugFunctionLibrary.gen.cpp
+11>DS_DebugSettings.h(37): Error C4309 : “初始化”: 截断常量值
+11>DS_DebugSettings.h(37): Error C4369 : “EDS_System::Custom4”: 枚举数的值“-2147483648”不能表示为“unsigned int”，值是“-2147483648”
+[8/14] Compile [x64] Module.MultiplayerInventory.cpp
+[9/14] Link [x64] UnrealEditor-MultiplayerInventory.lib
+  正在创建库 C:\UnrealProject\InventorySystems-main\Plugins\MultiplayerInventory\Intermediate\Build\Win64\x64\UnrealEditor\Development\MultiplayerInventory\UnrealEditor-MultiplayerInventory.lib 和对象 C:\UnrealProject\InventorySystems-main\Plugins\MultiplayerInventory\Intermediate\Build\Win64\x64\UnrealEditor\Development\MultiplayerInventory\UnrealEditor-MultiplayerInventory.exp
+[10/14] Link [x64] UnrealEditor-InventoryProject.dll
+   创建对象 C:\UnrealProject\InventorySystems-main\Binaries\Win64\UnrealEditor-InventoryProject.exp
+[11/14] Link [x64] UnrealEditor-MultiplayerInventory.dll
+   创建对象 C:\UnrealProject\InventorySystems-main\Plugins\MultiplayerInventory\Binaries\Win64\UnrealEditor-MultiplayerInventory.exp
+Trace file written to C:/Users/AmberIonian/AppData/Local/UnrealBuildTool/Log.uba with size 7.2kb
+Total time in Unreal Build Accelerator local executor: 14.17 seconds
+Total execution time: 20.39 seconds
+11>Microsoft.MakeFile.Targets(44,5): Error MSB3073 : 命令“C:\UnrealEngine\UE_5.5\Engine\Build\BatchFiles\Build.bat InventoryProjectEditor Win64 Development -Project="C:\UnrealProject\InventorySystems-main\InventoryProject.uproject" -WaitMutex -FromMsBuild -architecture=x64”已退出，代码为 6。

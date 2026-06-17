@@ -2,10 +2,10 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "MultiplayerInventory",
-	"Description": "适用于多人游戏的库存系统",
+	"FriendlyName": "ItemCore",
+	"Description": "",
 	"Category": "Other",
-	"CreatedBy": "",
+	"CreatedBy": "AmberAeolian",
 	"CreatedByURL": "",
 	"DocsURL": "",
 	"MarketplaceURL": "",
@@ -16,23 +16,9 @@
 	"Installed": false,
 	"Modules": [
 		{
-			"Name": "MultiplayerInventory",
+			"Name": "ItemCore",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
-		}
-	],
-	"Plugins": [
-		{
-			"Name": "StructUtils",
-			"Enabled": true
-		},
-		{
-			"Name": "EnhancedInput",
-			"Enabled": true
-		},
-		{
-			"Name": "DebugHelper",
-			"Enabled": true
 		}
 	]
 }
