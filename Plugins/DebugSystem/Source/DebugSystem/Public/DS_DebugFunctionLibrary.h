@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "DebugSystem.h"
 #include "DS_DebugSettings.h"
 #include "DS_DebugFunctionLibrary.generated.h"
 

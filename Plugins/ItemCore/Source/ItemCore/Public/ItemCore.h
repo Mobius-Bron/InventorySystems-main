@@ -1,14 +1,14 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright AmberAeolian. All Rights Reserved.
 
 #pragma once
 
 #include "Modules/ModuleManager.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogItemCore, Log, All);
+
 class FItemCoreModule : public IModuleInterface
 {
 public:
-
-	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 };
