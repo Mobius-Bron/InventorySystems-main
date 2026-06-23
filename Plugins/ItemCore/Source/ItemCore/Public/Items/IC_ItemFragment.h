@@ -78,6 +78,7 @@ struct FIC_ImageFragment : public FIC_InventoryItemFragment
 	GENERATED_BODY()
 
 	UTexture2D* GetIcon() const { return Icon; }
+	FVector2D GetIconDimensions() const { return IconDimensions; }
 
 private:
 	UPROPERTY(EditAnywhere, Category = "ItemCore")

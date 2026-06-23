@@ -37,7 +37,7 @@ private:
  * - 任何实现了委托绑定的 UActorComponent 均可使用
  */
 USTRUCT(BlueprintType)
-struct FIC_InventoryFastArray : public FFastArraySerializer
+struct ITEMCORE_API FIC_InventoryFastArray : public FFastArraySerializer
 {
 	GENERATED_BODY()
 

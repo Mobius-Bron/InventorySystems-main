@@ -14,6 +14,9 @@ public class InventoryProject : ModuleRules
 			"EnhancedInput",
 			"UMG",
 			"MultiplayerInventory",
+			"SandboxInventory",
+			"ItemCore",
+			"DebugSystem",
 			"DebugHelper"
 		});
 	}
