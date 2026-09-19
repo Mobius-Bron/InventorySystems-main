@@ -11,8 +11,6 @@ class UMIS_EquippedSlottedItem;
 class UMIS_InventoryItem;
 class UImage;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMIS_EquippedGridSlotClicked, UMIS_EquippedGridSlot*, GridSlot, const FGameplayTag&, EquipmentTypeTag);
-
 UCLASS()
 class MULTIPLAYERINVENTORY_API UMIS_EquippedGridSlot : public UMIS_GridSlot
 {
@@ -29,8 +27,6 @@ public:
 	void SetEquipmentTypeTag(const FGameplayTag& Tag) { EquipmentTypeTag = Tag; }
 	FGameplayTag GetEquipmentTypeTag() const { return EquipmentTypeTag; }
 	void ClearEquippedState();
-
-	FMIS_EquippedGridSlotClicked EquippedGridSlotClicked;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Inventory", meta = (Categories = "GameItems.Equipment"))

@@ -10,10 +10,6 @@ class USlider;
 class UTextBlock;
 class USizeBox;
 
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FMIS_PopUpMenuSplit, int32, SplitAmount, int32, Index);
-DECLARE_DYNAMIC_DELEGATE_OneParam(FMIS_PopUpMenuDrop, int32, Index);
-DECLARE_DYNAMIC_DELEGATE_OneParam(FMIS_PopUpMenuConsume, int32, Index);
-
 UCLASS()
 class MULTIPLAYERINVENTORY_API UMIS_ItemPopUp : public UUserWidget
 {
@@ -24,10 +20,6 @@ protected:
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 
 public:
-	FMIS_PopUpMenuSplit OnSplit;
-	FMIS_PopUpMenuDrop OnDrop;
-	FMIS_PopUpMenuConsume OnConsume;
-
 	int32 GetSplitAmount() const;
 	void CollapseSplitButton() const;
 	void CollapseConsumeButton() const;

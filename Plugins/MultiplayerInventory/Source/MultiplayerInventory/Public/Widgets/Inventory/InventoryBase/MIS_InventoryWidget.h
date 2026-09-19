@@ -42,4 +42,7 @@ protected:
 
 	TWeakObjectPtr<UMIS_InventoryComponent> InventoryComponent;
 	bool bIsOpen{false};
+
+	/** [解耦重构] 是否已注册库存消息监听 (防止 InitFromComponent 被多次调用时重复注册) */
+	bool bListeningInventoryMessages{false};
 };

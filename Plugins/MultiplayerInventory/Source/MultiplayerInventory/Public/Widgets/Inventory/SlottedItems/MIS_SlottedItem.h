@@ -9,10 +9,6 @@ class UMIS_InventoryItem;
 class UImage;
 class UTextBlock;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMIS_SlottedItemClicked, int32, GridIndex, const FPointerEvent&, MouseEvent);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMIS_SlottedItemHovered, int32, GridIndex);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMIS_SlottedItemUnhovered, int32, GridIndex);
-
 UCLASS()
 class MULTIPLAYERINVENTORY_API UMIS_SlottedItem : public UUserWidget
 {
@@ -35,10 +31,6 @@ public:
 	UMIS_InventoryItem* GetInventoryItem() const;
 	void SetImageBrush(const FSlateBrush& Brush) const;
 	void UpdateStackCount(int32 StackCount);
-
-	FMIS_SlottedItemClicked OnSlottedItemClicked;
-	FMIS_SlottedItemHovered OnSlottedItemHovered;
-	FMIS_SlottedItemUnhovered OnSlottedItemUnhovered;
 
 private:
 	UPROPERTY(meta = (BindWidget))

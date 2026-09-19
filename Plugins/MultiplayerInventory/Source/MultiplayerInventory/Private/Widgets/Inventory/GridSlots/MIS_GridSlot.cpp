@@ -1,5 +1,6 @@
 #include "Widgets/Inventory/GridSlots/MIS_GridSlot.h"
 #include "Items/MIS_InventoryItem.h"
+#include "MIS_MessageKeys.h"
 #include "Widgets/ItemPopUp/MIS_ItemPopUp.h"
 
 #include "Components/Image.h"
@@ -7,18 +8,23 @@
 void UMIS_GridSlot::NativeOnMouseEnter(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
 	Super::NativeOnMouseEnter(MyGeometry, MouseEvent);
-	GridSlotHovered.Broadcast(TileIndex, MouseEvent);
+
+	// [解耦重构] 广播消息而非委托: 本控件不需要知道父级是谁、也不需要 MouseEvent 之外的上下文。
+	// SigSource 为自身, 接收方据此区分是哪一个格子。
+	MIS::Emit(MSGKEY(MIS_UI_GRID_SLOT_HOVERED), GMP::FSigSource(this), TileIndex);
 }
 
 void UMIS_GridSlot::NativeOnMouseLeave(const FPointerEvent& MouseEvent)
 {
 	Super::NativeOnMouseLeave(MouseEvent);
-	GridSlotUnhovered.Broadcast(TileIndex, MouseEvent);
+	MIS::Emit(MSGKEY(MIS_UI_GRID_SLOT_UNHOVERED), GMP::FSigSource(this), TileIndex);
 }
 
 FReply UMIS_GridSlot::NativeOnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
-	GridSlotClicked.Broadcast(TileIndex, MouseEvent);
+	// 点击需携带鼠标键: 父级会把它转发给物品点击逻辑, 用于区分左键拾取 / 右键菜单
+	MIS::Emit(MSGKEY(MIS_UI_GRID_SLOT_CLICKED), GMP::FSigSource(this),
+		TileIndex, MIS::MouseButtonFromEvent(MouseEvent));
 	return FReply::Handled();
 }
 

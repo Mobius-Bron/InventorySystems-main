@@ -1,6 +1,7 @@
 #include "Widgets/Inventory/Spatial/MIS_InventoryGrid.h"
 
 #include "DH_DebugFunctionLibrary.h"
+#include "MIS_MessageKeys.h"
 #include "MultiplayerInventory.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Blueprint/SlateBlueprintLibrary.h"
@@ -43,10 +44,30 @@ void UMIS_InventoryGrid::InitFromComponent(UMIS_InventoryComponent* InInventoryC
 
 	if (InventoryComponent.IsValid())
 	{
-		InventoryComponent->OnItemAdded.AddDynamic(this, &ThisClass::AddItem);
-		InventoryComponent->OnItemRemoved.AddDynamic(this, &ThisClass::OnExternalItemRemoved);
-		InventoryComponent->OnStackChange.AddDynamic(this, &ThisClass::AddStacks);
-		DH_SCREEN(3.f, DHColors::Orange, "[背包网格] 已绑定 OnItemAdded + OnItemRemoved + OnStackChange 委托");
+		// [解耦重构] 不再绑定数据层委托, 改为监听数据层广播的消息。
+		// SigSource 使用库存组件本身, 与数据层发送侧保持一致 (定向投递, 多实例不串台)。
+		const GMP::FSigSource InventorySource(InventoryComponent.Get());
+
+		MIS::Listen(MSGKEY(MIS_MSG_ITEM_ADDED), InventorySource, this,
+			[this](UMIS_InventoryItem* Item)
+			{
+				AddItem(Item);
+			});
+
+		MIS::Listen(MSGKEY(MIS_MSG_ITEM_REMOVED), InventorySource, this,
+			[this](UMIS_InventoryItem* Item)
+			{
+				OnExternalItemRemoved(Item);
+			});
+
+		MIS::Listen(MSGKEY(MIS_MSG_STACK_CHANGED), InventorySource, this,
+			[this](FMIS_SlotAvailabilityResult Result)
+			{
+				AddStacks(Result);
+			});
+
+		DH_SCREEN(3.f, DHColors::Orange,
+			"[背包网格] 已监听 MIS.Inv.ItemAdded + ItemRemoved + StackChanged 消息");
 	}
 
 	BindEquippedGridSlotDelegates();
@@ -75,9 +96,15 @@ void UMIS_InventoryGrid::ConstructGrid()
 
 			GridSlots.Add(GridSlot);
 			GridSlot->SetUnoccupiedTexture();
-			GridSlot->GridSlotClicked.AddDynamic(this, &ThisClass::OnGridSlotClicked);
-			GridSlot->GridSlotHovered.AddDynamic(this, &ThisClass::OnGridSlotHovered);
-			GridSlot->GridSlotUnhovered.AddDynamic(this, &ThisClass::OnGridSlotUnhovered);
+
+			// [解耦重构] 监听格子广播的消息 (SigSource 为该格子本身, 据此区分是哪一个)
+			const GMP::FSigSource SlotSource(GridSlot);
+			MIS::Listen(MSGKEY(MIS_UI_GRID_SLOT_CLICKED), SlotSource, this,
+				[this](int32 InIndex, uint8 InButton) { OnGridSlotClicked(InIndex, InButton); });
+			MIS::Listen(MSGKEY(MIS_UI_GRID_SLOT_HOVERED), SlotSource, this,
+				[this](int32 InIndex) { OnGridSlotHovered(InIndex); });
+			MIS::Listen(MSGKEY(MIS_UI_GRID_SLOT_UNHOVERED), SlotSource, this,
+				[this](int32 InIndex) { OnGridSlotUnhovered(InIndex); });
 		}
 	}
 }
@@ -469,16 +496,6 @@ int32 UMIS_InventoryGrid::GetStackAmount(const UMIS_GridSlot* GridSlot) const
 	return CurrentSlotStackCount;
 }
 
-bool UMIS_InventoryGrid::IsRightClick(const FPointerEvent& MouseEvent) const
-{
-	return MouseEvent.GetEffectingButton() == EKeys::RightMouseButton;
-}
-
-bool UMIS_InventoryGrid::IsLeftClick(const FPointerEvent& MouseEvent) const
-{
-	return MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton;
-}
-
 void UMIS_InventoryGrid::PickUp(UMIS_InventoryItem* ClickedInventoryItem, const int32 GridIndex)
 {
 	DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] PickUp | idx=%d", GridIndex);
@@ -612,16 +629,20 @@ void UMIS_InventoryGrid::AddStacks(const FMIS_SlotAvailabilityResult& Result)
 	}
 }
 
-void UMIS_InventoryGrid::OnSlottedItemClicked(int32 GridIndex, const FPointerEvent& MouseEvent)
+void UMIS_InventoryGrid::OnSlottedItemClicked(int32 GridIndex, uint8 MouseButton)
 {
 	check(GridSlots.IsValidIndex(GridIndex));
 	UMIS_InventoryItem* ClickedInventoryItem = GridSlots[GridIndex]->GetInventoryItem().Get();
 
+	// [解耦重构] 鼠标键由发送方以 uint8 传递, 不再传 Slate 事件对象
+	const bool bLeftClick = (MouseButton == MIS::MouseButton_Left);
+	const bool bRightClick = (MouseButton == MIS::MouseButton_Right);
+
 	DH_SCREEN(2.f, DHColors::Magenta,
 		"[背包网格] 槽位点击 | idx=%d | 有HoverItem=%d | 左键=%d | 右键=%d",
-		GridIndex, IsValid(HoverItem), IsLeftClick(MouseEvent), IsRightClick(MouseEvent));
+		GridIndex, IsValid(HoverItem), bLeftClick, bRightClick);
 
-	if (!IsValid(HoverItem) && IsLeftClick(MouseEvent))
+	if (!IsValid(HoverItem) && bLeftClick)
 	{
 		DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] >> 情况1: 拾起物品");
 		OnItemUnhovered();
@@ -630,7 +651,7 @@ void UMIS_InventoryGrid::OnSlottedItemClicked(int32 GridIndex, const FPointerEve
 	}
 
 	// ---- 情况2: 右键显示弹出菜单 ----
-	if (IsRightClick(MouseEvent))
+	if (bRightClick)
 	{
 		CreateItemPopUp(GridIndex);
 		return;
@@ -693,10 +714,14 @@ void UMIS_InventoryGrid::CreateItemPopUp(const int32 GridIndex)
 	CanvasSlot->SetPosition(MousePosition - ItemPopUpOffset);
 	CanvasSlot->SetSize(ItemPopUp->GetBoxSize());
 
+	// [解耦重构] 监听弹窗广播的消息 (SigSource 为该弹窗本身)
+	const GMP::FSigSource PopUpSource(ItemPopUp);
+
 	const int32 SliderMax = GridSlots[GridIndex]->GetStackCount() - 1;
 	if (RightClickedItem->IsStackable() && SliderMax > 0)
 	{
-		ItemPopUp->OnSplit.BindDynamic(this, &ThisClass::OnPopUpMenuSplit);
+		MIS::Listen(MSGKEY(MIS_UI_POPUP_SPLIT), PopUpSource, this,
+			[this](int32 InIndex, int32 InAmount) { OnPopUpMenuSplit(InAmount, InIndex); });
 		ItemPopUp->SetSliderParams(SliderMax, FMath::Max(1, GridSlots[GridIndex]->GetStackCount() / 2));
 	}
 	else
@@ -704,11 +729,13 @@ void UMIS_InventoryGrid::CreateItemPopUp(const int32 GridIndex)
 		ItemPopUp->CollapseSplitButton();
 	}
 
-	ItemPopUp->OnDrop.BindDynamic(this, &ThisClass::OnPopUpMenuDrop);
+	MIS::Listen(MSGKEY(MIS_UI_POPUP_DROP), PopUpSource, this,
+		[this](int32 InIndex) { OnPopUpMenuDrop(InIndex); });
 
 	if (RightClickedItem->IsConsumable())
 	{
-		ItemPopUp->OnConsume.BindDynamic(this, &ThisClass::OnPopUpMenuConsume);
+		MIS::Listen(MSGKEY(MIS_UI_POPUP_CONSUME), PopUpSource, this,
+			[this](int32 InIndex) { OnPopUpMenuConsume(InIndex); });
 	}
 	else
 	{
@@ -739,7 +766,9 @@ void UMIS_InventoryGrid::DropItem()
 	if (!IsValid(HoverItem->GetInventoryItem())) return;
 	if (!InventoryComponent.IsValid()) return;
 
-	InventoryComponent->RequestDropItem(HoverItem->GetInventoryItem(), HoverItem->GetStackCount());
+	// [解耦重构] UI 只发意图命令, 由数据层监听 MIS.Cmd.DropItem 后自行决定如何处理
+	MIS::Emit(MSGKEY(MIS_CMD_DROP_ITEM), GMP::FSigSource(InventoryComponent.Get()),
+		HoverItem->GetInventoryItem(), HoverItem->GetStackCount());
 
 	ClearHoverItem();
 	ShowCursor();
@@ -808,9 +837,14 @@ UMIS_SlottedItem* UMIS_InventoryGrid::CreateSlottedItem(UMIS_InventoryItem* Item
 	SlottedItem->SetIsStackable(bStackable);
 	const int32 StackUpdateAmount = bStackable ? StackAmount : 0;
 	SlottedItem->UpdateStackCount(StackUpdateAmount);
-	SlottedItem->OnSlottedItemClicked.AddDynamic(this, &ThisClass::OnSlottedItemClicked);
-	SlottedItem->OnSlottedItemHovered.AddDynamic(this, &ThisClass::OnSlottedItemHovered);
-	SlottedItem->OnSlottedItemUnhovered.AddDynamic(this, &ThisClass::OnSlottedItemUnhovered);
+	// [解耦重构] 监听该物品图标广播的消息
+	const GMP::FSigSource ItemSource(SlottedItem);
+	MIS::Listen(MSGKEY(MIS_UI_SLOTTED_ITEM_CLICKED), ItemSource, this,
+		[this](int32 InGridIndex, uint8 InMouseButton) { OnSlottedItemClicked(InGridIndex, InMouseButton); });
+	MIS::Listen(MSGKEY(MIS_UI_SLOTTED_ITEM_HOVERED), ItemSource, this,
+		[this](int32 InGridIndex) { OnSlottedItemHovered(InGridIndex); });
+	MIS::Listen(MSGKEY(MIS_UI_SLOTTED_ITEM_UNHOVERED), ItemSource, this,
+		[this](int32 InGridIndex) { OnSlottedItemUnhovered(InGridIndex); });
 
 	return SlottedItem;
 }
@@ -998,7 +1032,8 @@ void UMIS_InventoryGrid::OnPopUpMenuConsume(int32 Index)
 
 	ItemPopUp->RemoveFromParent();
 
-	InventoryComponent->RequestConsumeItem(Item);
+	// [解耦重构] UI 只发意图命令
+	MIS::Emit(MSGKEY(MIS_CMD_CONSUME_ITEM), GMP::FSigSource(InventoryComponent.Get()), Item);
 
 	if (NewStackCount <= 0)
 	{
@@ -1043,13 +1078,15 @@ void UMIS_InventoryGrid::OnSlottedItemHovered(int32 GridIndex)
 	EquippedDescriptionTimerDelegate.BindUObject(this, &ThisClass::ShowEquippedItemDescription, Item);
 	GetWorld()->GetTimerManager().SetTimer(EquippedDescriptionTimer, EquippedDescriptionTimerDelegate, EquippedDescriptionTimerDelay, false);
 
-	OnGridItemHovered.Broadcast(Item);
+	// [解耦重构] 改为广播消息, 外部(如 HUD/描述面板)按需监听
+	MIS::Emit(MSGKEY(MIS_UI_GRID_ITEM_HOVER_CHANGED), GMP::FSigSource(this), Item, true);
 }
 
 void UMIS_InventoryGrid::OnSlottedItemUnhovered(int32 GridIndex)
 {
 	OnItemUnhovered();
-	OnGridItemUnhovered.Broadcast();
+	MIS::Emit(MSGKEY(MIS_UI_GRID_ITEM_HOVER_CHANGED), GMP::FSigSource(this),
+		static_cast<UMIS_InventoryItem*>(nullptr), false);
 }
 
 void UMIS_InventoryGrid::OnItemUnhovered()
@@ -1134,7 +1171,7 @@ UUserWidget* UMIS_InventoryGrid::GetHiddenCursorWidget()
 	return HiddenCursorWidget;
 }
 
-void UMIS_InventoryGrid::OnGridSlotClicked(int32 GridIndex, const FPointerEvent& MouseEvent)
+void UMIS_InventoryGrid::OnGridSlotClicked(int32 GridIndex, uint8 MouseButton)
 {
 	DH_PRINT(EDH_Output::Both, 2.f, DHColors::Magenta,
 		"[背包网格] 背景下点击 | ItemDropIndex=%d | 有HoverItem=%d | 有ValidItem=%d",
@@ -1146,7 +1183,8 @@ void UMIS_InventoryGrid::OnGridSlotClicked(int32 GridIndex, const FPointerEvent&
 	if (CurrentQueryResult.ValidItem.IsValid() && GridSlots.IsValidIndex(CurrentQueryResult.UpperLeftIndex))
 	{
 		DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] >> 交换: 点击已有物品");
-		OnSlottedItemClicked(CurrentQueryResult.UpperLeftIndex, MouseEvent);
+		// 转发给物品点击逻辑, 鼠标键原样透传 (保持"左键拾取 / 右键菜单"语义)
+		OnSlottedItemClicked(CurrentQueryResult.UpperLeftIndex, MouseButton);
 		return;
 	}
 
@@ -1159,7 +1197,7 @@ void UMIS_InventoryGrid::OnGridSlotClicked(int32 GridIndex, const FPointerEvent&
 	}
 }
 
-void UMIS_InventoryGrid::OnGridSlotHovered(int32 GridIndex, const FPointerEvent& MouseEvent)
+void UMIS_InventoryGrid::OnGridSlotHovered(int32 GridIndex)
 {
 	if (IsValid(HoverItem)) return;
 
@@ -1170,7 +1208,7 @@ void UMIS_InventoryGrid::OnGridSlotHovered(int32 GridIndex, const FPointerEvent&
 	}
 }
 
-void UMIS_InventoryGrid::OnGridSlotUnhovered(int32 GridIndex, const FPointerEvent& MouseEvent)
+void UMIS_InventoryGrid::OnGridSlotUnhovered(int32 GridIndex)
 {
 	if (IsValid(HoverItem)) return;
 
@@ -1288,7 +1326,9 @@ void UMIS_InventoryGrid::BindEquippedGridSlotDelegates()
 	{
 		if (IsValid(GridSlot))
 		{
-			GridSlot->EquippedGridSlotClicked.AddDynamic(this, &ThisClass::EquippedGridSlotClicked);
+			// [解耦重构] 监听装备槽广播的消息
+			MIS::Listen(MSGKEY(MIS_UI_EQUIPPED_GRID_SLOT_CLICKED), GMP::FSigSource(GridSlot), this,
+				[this](UMIS_EquippedGridSlot* InSlot, FGameplayTag InTag) { EquippedGridSlotClicked(InSlot, InTag); });
 		}
 	}
 }
@@ -1326,14 +1366,17 @@ void UMIS_InventoryGrid::EquippedGridSlotClicked(UMIS_EquippedGridSlot* Equipped
 		EquipmentTypeTag,
 		TileSize
 	);
-	EquippedSlottedItem->OnEquippedSlottedItemClicked.AddDynamic(this, &ThisClass::EquippedSlottedItemClicked);
+	// [解耦重构] 监听新装备图标的消息
+	MIS::Listen(MSGKEY(MIS_UI_EQUIPPED_SLOTTED_ITEM_CLICKED), GMP::FSigSource(EquippedSlottedItem), this,
+		[this](UMIS_EquippedSlottedItem* InItem) { EquippedSlottedItemClicked(InItem); });
 
 	if (InventoryComponent.IsValid())
 	{
 		DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
-			"[装备链路-UI] >>> 调用 RequestEquipSlotClicked | EquipTo=%s | UnequipTo=nullptr",
+			"[装备链路-UI] >>> 发送 MIS.Cmd.EquipSlotClicked | EquipTo=%s | UnequipTo=nullptr",
 			*ItemToEquip->GetName());
-		InventoryComponent->RequestEquipSlotClicked(ItemToEquip, nullptr);
+		MIS::Emit(MSGKEY(MIS_CMD_EQUIP_SLOT), GMP::FSigSource(InventoryComponent.Get()),
+			ItemToEquip, static_cast<UMIS_InventoryItem*>(nullptr));
 	}
 	else
 	{
@@ -1423,10 +1466,8 @@ void UMIS_InventoryGrid::RemoveEquippedSlottedItem(UMIS_EquippedSlottedItem* Equ
 {
 	if (!IsValid(EquippedSlottedItem)) return;
 
-	if (EquippedSlottedItem->OnEquippedSlottedItemClicked.IsAlreadyBound(this, &ThisClass::EquippedSlottedItemClicked))
-	{
-		EquippedSlottedItem->OnEquippedSlottedItemClicked.RemoveDynamic(this, &ThisClass::EquippedSlottedItemClicked);
-	}
+	// [解耦重构] 解绑该图标的消息监听 (精确到具体发送方, 不影响其它图标)
+	MIS::Unbind(MSGKEY(MIS_UI_EQUIPPED_SLOTTED_ITEM_CLICKED), this, GMP::FSigSource(EquippedSlottedItem));
 	EquippedSlottedItem->RemoveFromParent();
 }
 
@@ -1438,7 +1479,11 @@ void UMIS_InventoryGrid::MakeEquippedSlottedItem(UMIS_EquippedSlottedItem* OldSl
 		ItemToEquip,
 		OldSlottedItem->GetEquipmentTypeTag(),
 		GetTileSize());
-	if (IsValid(SlottedItem)) SlottedItem->OnEquippedSlottedItemClicked.AddDynamic(this, &ThisClass::EquippedSlottedItemClicked);
+	if (IsValid(SlottedItem))
+	{
+		MIS::Listen(MSGKEY(MIS_UI_EQUIPPED_SLOTTED_ITEM_CLICKED), GMP::FSigSource(SlottedItem), this,
+			[this](UMIS_EquippedSlottedItem* InItem) { EquippedSlottedItemClicked(InItem); });
+	}
 
 	EquippedGridSlot->SetEquippedSlottedItem(SlottedItem);
 }
@@ -1453,7 +1498,9 @@ void UMIS_InventoryGrid::BroadcastSlotClickedDelegates(UMIS_InventoryItem* ItemT
 
 	if (InventoryComponent.IsValid())
 	{
-		InventoryComponent->RequestEquipSlotClicked(ItemToEquip, ItemToUnequip);
+		// [解耦重构] UI 只发意图命令
+		MIS::Emit(MSGKEY(MIS_CMD_EQUIP_SLOT), GMP::FSigSource(InventoryComponent.Get()),
+			ItemToEquip, ItemToUnequip);
 	}
 	else
 	{

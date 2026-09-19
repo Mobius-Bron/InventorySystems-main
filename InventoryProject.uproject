@@ -29,6 +29,10 @@
 		{
 			"Name": "DebugSystem",
 			"Enabled": true
+		},
+		{
+			"Name": "GMP",
+			"Enabled": true
 		}
 	]
 }

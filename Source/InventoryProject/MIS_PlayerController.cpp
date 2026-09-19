@@ -30,7 +30,8 @@ void AMIS_PlayerController::BeginPlay()
 		if (IsValid(HUDWidget))
 		{
 			HUDWidget->AddToViewport();
-			InventoryComp->SetHUDWidget(HUDWidget);
+			// [解耦重构] 改为注入库存组件: HUD 内部通过 GMP 消息接收拾取提示/背包满/开关通知
+			HUDWidget->SetInventoryComponent(InventoryComp);
 		}
 	}
 
@@ -40,9 +41,10 @@ void AMIS_PlayerController::BeginPlay()
 		if (IsValid(InventoryWidget))
 		{
 			InventoryWidget->AddToViewport();
+			// [解耦重构] 先注入组件(空间查询需要), 再注册消息监听
+			InventoryComp->SetInventoryWidget(InventoryWidget);
 			InventoryWidget->InitFromComponent(InventoryComp);
 			InventoryWidget->CloseInventory();
-			InventoryComp->SetInventoryWidget(InventoryWidget);
 		}
 	}
 }

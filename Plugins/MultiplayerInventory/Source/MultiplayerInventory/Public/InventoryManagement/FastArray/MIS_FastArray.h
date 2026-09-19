@@ -45,10 +45,10 @@ struct FMIS_InventoryFastArray : public FFastArraySerializer
 	/** 获取所有物品列表 */
 	TArray<UMIS_InventoryItem*> GetAllItems() const;
 
-	/** 条目被移除前的回调 - 广播 OnItemRemoved */
+	/** 条目被移除前的回调 - 广播 MIS.Inv.ItemRemoved 消息 */
 	void PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize);
 
-	/** 条目被添加后的回调 - 注册复制子对象 + 广播 OnItemAdded */
+	/** 条目被添加后的回调 - 注册复制子对象 + 广播 MIS.Inv.ItemAdded 消息 */
 	void PostReplicatedAdd(const TArrayView<int32> AddedIndices, int32 FinalSize);
 
 	/** FastArray 增量序列化 */

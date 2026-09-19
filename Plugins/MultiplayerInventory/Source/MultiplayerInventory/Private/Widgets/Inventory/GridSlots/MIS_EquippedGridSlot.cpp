@@ -7,6 +7,7 @@
 #include "Items/MIS_InventoryItem.h"
 #include "Items/Fragments/MIS_FragmentTags.h"
 #include "Items/Fragments/MIS_ItemFragment.h"
+#include "MIS_MessageKeys.h"
 #include "Widgets/Inventory/SlottedItems/MIS_EquippedSlottedItem.h"
 
 void UMIS_EquippedGridSlot::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -19,7 +20,8 @@ void UMIS_EquippedGridSlot::NativeOnMouseLeave(const FPointerEvent& InMouseEvent
 
 FReply UMIS_EquippedGridSlot::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	EquippedGridSlotClicked.Broadcast(this, EquipmentTypeTag);
+	// [解耦重构] 广播消息: 载荷为自身 + 装备类型标签
+	MIS::Emit(MSGKEY(MIS_UI_EQUIPPED_GRID_SLOT_CLICKED), GMP::FSigSource(this), this, EquipmentTypeTag);
 	return FReply::Handled();
 }
 

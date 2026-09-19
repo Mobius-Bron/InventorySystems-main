@@ -1,0 +1,159 @@
+# OldMultiplayerInventory 插件 - 项目使用介绍
+
+## 一、快速集成
+
+### 1.1 给物品添加拾取能力
+在世界中的 Actor 上添加 UOldMIS_ItemComponent 组件,在 ItemManifest 中配置:
+  - FOldMIS_GridFragment       — 设置 GridSize(如 2x2)和 GridPadding
+  - FOldMIS_ImageFragment      — 设置图标纹理和尺寸
+  - FOldMIS_StackableFragment  — (可选) 最大堆叠数和初始数量
+  - FOldMIS_EquipmentFragment  — (可选) 装备类型 Tag + 附着骨骼点 + EquipActorClass
+  - FOldMIS_ConsumableFragment — (可选) 消耗品修饰器数组
+  - ItemType GameplayTag    — 物品类型标签 (如 GameItems.Equipment.Weapons.Sword)
+
+### 1.2 给角色添加库存系统
+在 PlayerCharacter 上添加两个组件:
+  - UOldMIS_InventoryComponent  — 库存核心组件
+  - UOldMIS_EquipmentComponent  — 装备管理组件
+
+在 PlayerCharacter.h 中暴露组件引用:
+  UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
+  UOldMIS_InventoryComponent* InventoryComponent;
+
+  UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
+  UOldMIS_EquipmentComponent* EquipmentComponent;
+
+在 PlayerCharacter.cpp 构造函数中创建:
+  InventoryComponent = CreateDefaultSubobject<UOldMIS_InventoryComponent>(TEXT("InventoryComponent"));
+  EquipmentComponent = CreateDefaultSubobject<UOldMIS_EquipmentComponent>(TEXT("EquipmentComponent"));
+
+在 NotifyControllerChanged() 中初始化装备组件 (此时 Controller 已就绪):
+  void AMyCharacter::NotifyControllerChanged()
+  {
+      Super::NotifyControllerChanged();
+      if (IsValid(EquipmentComponent))
+      {
+          APlayerController* PC = Cast<APlayerController>(Controller);
+          EquipmentComponent->Init(PC, InventoryComponent, GetMesh());
+      }
+  }
+
+SetupPlayerInputComponent 中绑定输入:
+  void AMyCharacter::SetupPlayerInputComponent(UInputComponent* Input)
+  {
+      Super::SetupPlayerInputComponent(Input);
+      auto* EI = CastChecked<UEnhancedInputComponent>(Input);
+      EI->BindAction(PrimaryInteractAction, ETriggerEvent::Started, this, &AMyCharacter::PrimaryInteract);
+      EI->BindAction(ToggleInventoryAction, ETriggerEvent::Started, this, &AMyCharacter::ToggleInventory);
+  }
+
+输入回调:
+  void PrimaryInteract() { InventoryComponent->PrimaryInteract(); }
+  void ToggleInventory() { InventoryComponent->ToggleInventory(); }
+  void Look(const FInputActionValue& Value)
+  {
+      AddControllerPitchInput(-Value.Y);
+      AddControllerYawInput(Value.X);
+      InventoryComponent->TraceForItem();  // 每帧射线检测拾取目标
+  }
+
+### 1.3 创建库存 UI
+创建蓝图继承 UOldMIS_InventoryWidget,将以下内容加入 UMG:
+  - CanvasPanel  (必需, 命名 CanvasPanel)
+  - UOldMIS_InventoryGrid (必需, 命名 InventoryGrid)
+  - 在 EquippedGridSlots 数组中拖入 UOldMIS_EquippedGridSlot
+
+在 InventoryComponent 初始化后创建并绑定 Widget:
+  auto* InvComp = UOldMIS_InventoryFunctionLibrary::GetInventoryComponent(PC);
+  auto* Widget = CreateWidget<UOldMIS_InventoryWidget>(PC, InventoryWidgetClass);
+  Widget->InitFromComponent(InvComp);
+  InvComp->SetInventoryWidget(Widget);
+  InvComp->SetHUDWidget(HUDWidget);
+
+### 1.4 配置 PlayerController
+在 PlayerController 中配置输入 Action 和 HUD:
+  - SetupPlayerInputComponent 中绑定 Move/Look/PrimaryInteract/ToggleInventory
+  - BeginPlay 中创建 HUDWidget 并设置到 InventoryComponent
+
+### 1.5 ProxyMesh 角色预览 (可选)
+在库存 UI 中放置 AOldMIS_ProxyMesh Actor:
+  - 自动复制角色骨骼网格体和动画蓝图
+  - 自带 UOldMIS_EquipmentComponent (标记为代理模式)
+  - 代理模式下只生成 3D 装备 Actor 显示,不执行属性修改效果
+  - 配合 UOldMIS_CharacterDisplay Widget 实现角色旋转预览
+
+## 二、主要对外使用的类
+
+### 2.1 给世界物品使用的
+  UOldMIS_ItemComponent             — 添加在可拾取 Actor 上
+  UOldMIS_HighlightableStaticMesh   — 静态网格体的拾取高亮
+  UOldMIS_HighlightableSkeletalMesh — 骨骼网格体的拾取高亮
+
+### 2.2 给角色使用的 Component
+  UOldMIS_InventoryComponent   — 库存管理 (拾取/丢弃/消耗/装备)
+  UOldMIS_EquipmentComponent   — 装备管理 (3D装备生成/属性修改)
+  注: 推荐都挂在 PlayerCharacter 上,EquipmentComponent 通过 Init(PC, InvComp, Mesh) 统一初始化
+
+### 2.3 给 UI 使用的 Widget
+  UOldMIS_InventoryWidget      — 库存主界面
+  UOldMIS_InventoryGrid        — 库存网格 (也可单独使用)
+  UOldMIS_EquippedGridSlot     — 装备栏槽位
+  UOldMIS_HUDWidget            — 游戏内 HUD
+  UOldMIS_CharacterDisplay     — 角色预览 (配合 AOldMIS_ProxyMesh)
+  UOldMIS_ItemDescription      — 物品详情悬浮提示
+
+### 2.4 蓝图函数库
+  UOldMIS_InventoryFunctionLibrary.GetInventoryComponent() — 从 PlayerController 获取库存组件
+  UOldMIS_WidgetFunctionLibrary.GetIndexFromPosition()     — 坐标转索引
+
+### 2.5 核心委托 (供外部订阅)
+  InventoryComponent.OnItemAdded         — 物品添加时
+  InventoryComponent.OnItemRemoved       — 物品移除时
+  InventoryComponent.OnStackChange       — 堆叠变化时
+  InventoryComponent.OnItemEquipped      — 装备时
+  InventoryComponent.OnItemUnequipped    — 卸下时
+  InventoryComponent.NoRoomInInventory   — 背包已满
+
+## 三、创建自定义物品
+
+### 3.1 在编辑器中配置 ItemManifest
+在物品 Actor 的 UOldMIS_ItemComponent 的 ItemManifest 中:
+  - 添加 GridFragment, 设置网格尺寸 (如 2x3 = 占用6格)
+  - 添加 ImageFragment, 设置图标
+  - (可选) 添加 StackableFragment, 设置最大堆叠
+  - (可选) 添加 EquipmentFragment, 设置:
+      EquipmentType = 装备槽 Tag
+      SocketAttachPoint = 骨骼附着点名称
+      EquipActorClass = 装备 Actor 蓝图类
+      EquipModifiers = [StrengthModifier, DamageModifier, ...]
+  - (可选) 添加 ConsumableFragment, 设置:
+      ConsumeModifiers = [HealthPotionFragment, ...]
+
+### 3.2 创建自定义消耗品效果
+继承 FOldMIS_ConsumeModifier, 重写 OnConsume(APlayerController* PC):
+  在 PC 或 PC->GetPawn() 上获取属性组件,修改属性值
+
+### 3.3 创建自定义装备效果
+继承 FOldMIS_EquipModifier, 重写:
+  OnEquip(APlayerController* PC)   — 装备时执行 (如 +15 力量)
+  OnUnequip(APlayerController* PC) — 卸下时执行 (如 -15 力量)
+
+## 四、调试诊断
+
+### 4.1 DebugHelper 插件
+项目内置 DebugHelper 插件,提供运行时诊断工具:
+  - DH_PRINT()   — 输出到指定目标 (屏幕/日志/两者)
+  - DH_SCREEN()  — 屏幕显示 (便捷版)
+  - DH_LOG()     — 日志输出 (便捷版)
+  - DH_LOG_ERR() — 错误日志
+  - DH_LOG_WARN() — 警告日志
+  - DHColors::Cyan/Green/Red 等 — 预定义颜色常量
+
+### 4.2 装备链路调试
+当装备无法正常生成 3D Actor 时,检查日志前缀:
+  [装备链路-UI]        — UI 层 (点击装备槽/已装备物品)
+  [装备链路-InvComp]   — InventoryComponent RPC 层
+  [装备链路-EquipComp] — EquipmentComponent 初始化与装备回调
+  [装备链路-Fragment]  — EquipmentFragment Spawn 层
+
+每个关键步骤都有 DH_PRINT 输出,失败原因会以红色/黄色明确标出。

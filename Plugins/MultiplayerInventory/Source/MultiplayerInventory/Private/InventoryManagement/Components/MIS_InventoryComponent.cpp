@@ -1,6 +1,9 @@
 #include "InventoryManagement/Components/MIS_InventoryComponent.h"
 #include "DH_DebugFunctionLibrary.h"
 
+#include "GMPCore.h"
+#include "MIS_MessageKeys.h"
+
 #include "MultiplayerInventory.h"
 #include "Interaction/MIS_Highlightable.h"
 #include "Items/Components/MIS_ItemComponent.h"
@@ -8,8 +11,9 @@
 #include "Items/Fragments/MIS_ItemFragment.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
-#include "Widgets/HUD/MIS_HUDWidget.h"
 #include "Widgets/Inventory/InventoryBase/MIS_InventoryWidget.h"
+
+using GMP::FSigSource;  // 本编译单元内简化书写
 
 UMIS_InventoryComponent::UMIS_InventoryComponent() : InventoryList(this)
 {
@@ -43,6 +47,45 @@ void UMIS_InventoryComponent::Init(APlayerController* InPC)
 	}
 }
 
+void UMIS_InventoryComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	const FSigSource InventorySource(this);
+
+	// [解耦重构] UI -> 数据层: 监听意图命令, 收到后转换成对应的 Server RPC 请求。
+	// 监听者传入 this, GMP 内部保存弱引用, 组件销毁时会自动解绑。
+	MIS::Listen(MSGKEY(MIS_CMD_DROP_ITEM), InventorySource, this,
+		[this](UMIS_InventoryItem* Item, int32 StackCount)
+		{
+			RequestDropItem(Item, StackCount);
+		});
+
+	MIS::Listen(MSGKEY(MIS_CMD_CONSUME_ITEM), InventorySource, this,
+		[this](UMIS_InventoryItem* Item)
+		{
+			RequestConsumeItem(Item);
+		});
+
+	MIS::Listen(MSGKEY(MIS_CMD_EQUIP_SLOT), InventorySource, this,
+		[this](UMIS_InventoryItem* ItemToEquip, UMIS_InventoryItem* ItemToUnequip)
+		{
+			RequestEquipSlotClicked(ItemToEquip, ItemToUnequip);
+		});
+
+	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Cyan,
+		"[背包组件] BeginPlay 完成: 已监听 MIS.Cmd.* 意图命令");
+}
+
+void UMIS_InventoryComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	MIS::Unbind(MSGKEY(MIS_CMD_DROP_ITEM), this);
+	MIS::Unbind(MSGKEY(MIS_CMD_CONSUME_ITEM), this);
+	MIS::Unbind(MSGKEY(MIS_CMD_EQUIP_SLOT), this);
+
+	Super::EndPlay(EndPlayReason);
+}
+
 void UMIS_InventoryComponent::TraceForItem()
 {
 	if (!IsValid(GEngine) || !IsValid(GEngine->GameViewport)) return;
@@ -64,7 +107,8 @@ void UMIS_InventoryComponent::TraceForItem()
 	
 	if (!ThisActor.IsValid())
 	{
-		if (IsValid(HUDWidget)) HUDWidget->HidePickupMessage();
+		// 消息化: 射线没有命中任何物体, 通知 UI 收起拾取提示
+		MIS::Emit(MSGKEY(MIS_MSG_PICKUP_PROMPT), FSigSource(this), FString(), false);
 	}
 
 	if (ThisActor == LastActor) return;
@@ -78,7 +122,8 @@ void UMIS_InventoryComponent::TraceForItem()
 
 		if (UMIS_ItemComponent* ItemComponent = ThisActor->FindComponentByClass<UMIS_ItemComponent>())
 		{
-			if (IsValid(HUDWidget)) HUDWidget->ShowPickupMessage(ItemComponent->GetPickupMessage());
+			// 消息化: 命中可拾取物, 把提示文本交给 UI 自行决定如何呈现
+			MIS::Emit(MSGKEY(MIS_MSG_PICKUP_PROMPT), FSigSource(this), ItemComponent->GetPickupMessage(), true);
 		}
 	}
 
@@ -116,27 +161,16 @@ void UMIS_InventoryComponent::PrimaryInteract()
 
 void UMIS_InventoryComponent::ToggleInventory()
 {
-	if (!IsValid(InventoryWidget)) return;
-	if (!OwningController.IsValid()) return;
+	// [解耦重构] 数据层只翻转状态并广播, 不再直接开关 UI、不再操作输入模式和鼠标光标。
+	// 界面显隐 / HUD 显隐 / 输入模式全部由监听 MIS.Inv.MenuToggled 的 UI 侧自行处理。
+	// 副作用: 服务端(无 UI)调用本函数也不会再因为拿不到 Widget 而提前返回。
+	bInventoryOpen = !bInventoryOpen;
 
-	if (bInventoryOpen)
-	{
-		bInventoryOpen = false;
-		InventoryWidget->CloseInventory();
-		if (IsValid(HUDWidget)) HUDWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+	MIS::Emit(MSGKEY(MIS_MSG_MENU_TOGGLED), FSigSource(this), bInventoryOpen);
 
-		OwningController->SetInputMode(FInputModeGameOnly());
-		OwningController->SetShowMouseCursor(false);
-	}
-	else
-	{
-		bInventoryOpen = true;
-		if (IsValid(HUDWidget)) HUDWidget->SetVisibility(ESlateVisibility::Hidden);
-		InventoryWidget->OpenInventory();
-
-		OwningController->SetInputMode(FInputModeGameAndUI());
-		OwningController->SetShowMouseCursor(true);
-	}
+	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Cyan,
+		"[背包组件] ToggleInventory -> 广播 MIS.Inv.MenuToggled(%s)",
+		bInventoryOpen ? TEXT("打开") : TEXT("关闭"));
 }
 
 void UMIS_InventoryComponent::TryAddItem(UMIS_ItemComponent* ItemComponent)
@@ -165,14 +199,14 @@ void UMIS_InventoryComponent::TryAddItem(UMIS_ItemComponent* ItemComponent)
 	if (Result.TotalRoomToFill == 0)
 	{
 		DH_LOG_WARN("[背包组件] -> 库存已满!");
-		NoRoomInInventory.Broadcast();
+		MIS::Emit(MSGKEY(MIS_MSG_NO_ROOM), FSigSource(this));
 		return;
 	}
 
 	if (Result.Item.IsValid() && Result.bStackable)
 	{
 		DH_LOG("[背包组件] -> 堆叠已有物品 | 填充=%d | 剩余=%d", Result.TotalRoomToFill, Result.Remainder);
-		OnStackChange.Broadcast(Result);
+		MIS::Emit(MSGKEY(MIS_MSG_STACK_CHANGED), FSigSource(this), Result);
 		Server_AddStacksToItem(ItemComponent->GetOwner(), Result.TotalRoomToFill, Result.Remainder);
 	}
 	else if (Result.TotalRoomToFill > 0)
@@ -207,9 +241,10 @@ void UMIS_InventoryComponent::Server_AddNewItem_Implementation(AActor* ItemActor
 	DH_PRINT(EDH_Output::Both, 4.f, FLinearColor::Green,
 		"[背包组件] 新物品创建完成 | Item=%s", *NewItem->GetName());
 
+	// 本地即时通知(远端由 FastArray 的 PostReplicatedAdd 负责), 避免重复或遗漏
 	if (GetOwner()->GetNetMode() == NM_ListenServer || GetOwner()->GetNetMode() == NM_Standalone)
 	{
-		OnItemAdded.Broadcast(NewItem);
+		MIS::Emit(MSGKEY(MIS_MSG_ITEM_ADDED), FSigSource(this), NewItem);
 	}
 
 	if (Remainder == 0)
@@ -340,13 +375,12 @@ void UMIS_InventoryComponent::Server_EquipSlotClicked_Implementation(UMIS_Invent
 void UMIS_InventoryComponent::Multicast_EquipSlotClicked_Implementation(UMIS_InventoryItem* ItemToEquip, UMIS_InventoryItem* ItemToUnequip)
 {
 	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
-		"[装备链路-InvComp] >>> Multicast_EquipSlotClicked | Equip=%s | Unequip=%s | bHasEquipListener=%d",
+		"[装备链路-InvComp] >>> Multicast_EquipSlotClicked | Equip=%s | Unequip=%s",
 		IsValid(ItemToEquip) ? *ItemToEquip->GetName() : TEXT("空"),
-		IsValid(ItemToUnequip) ? *ItemToUnequip->GetName() : TEXT("空"),
-		OnItemEquipped.IsBound());
+		IsValid(ItemToUnequip) ? *ItemToUnequip->GetName() : TEXT("空"));
 
-	OnItemEquipped.Broadcast(ItemToEquip);
-	OnItemUnequipped.Broadcast(ItemToUnequip);
+	MIS::Emit(MSGKEY(MIS_MSG_ITEM_EQUIPPED), FSigSource(this), ItemToEquip);
+	MIS::Emit(MSGKEY(MIS_MSG_ITEM_UNEQUIPPED), FSigSource(this), ItemToUnequip);
 
 	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
 		"[装备链路-InvComp] Multicast_EquipSlotClicked 广播完成");

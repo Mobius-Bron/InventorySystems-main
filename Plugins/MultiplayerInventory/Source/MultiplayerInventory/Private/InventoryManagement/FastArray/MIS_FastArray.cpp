@@ -1,5 +1,7 @@
 #include "InventoryManagement/FastArray/MIS_FastArray.h"
 
+#include "MIS_MessageKeys.h"
+
 #include "InventoryManagement/Components/MIS_InventoryComponent.h"
 #include "Items/MIS_InventoryItem.h"
 #include "Items/Components/MIS_ItemComponent.h"
@@ -23,7 +25,8 @@ void FMIS_InventoryFastArray::PreReplicatedRemove(const TArrayView<int32> Remove
 
 	for (int32 Index : RemovedIndices)
 	{
-		Component->OnItemRemoved.Broadcast(Entries[Index].Item);
+		// [解耦重构] 复制回调不再直接调委托, 改为广播消息, 由 UI 自行决定是否响应
+		MIS::Emit(MSGKEY(MIS_MSG_ITEM_REMOVED), GMP::FSigSource(Component), Entries[Index].Item);
 	}
 }
 
@@ -34,7 +37,8 @@ void FMIS_InventoryFastArray::PostReplicatedAdd(const TArrayView<int32> AddedInd
 
 	for (int32 Index : AddedIndices)
 	{
-		Component->OnItemAdded.Broadcast(Entries[Index].Item);
+		// [解耦重构] 复制回调不再直接调委托, 改为广播消息
+		MIS::Emit(MSGKEY(MIS_MSG_ITEM_ADDED), GMP::FSigSource(Component), Entries[Index].Item);
 	}
 }
 

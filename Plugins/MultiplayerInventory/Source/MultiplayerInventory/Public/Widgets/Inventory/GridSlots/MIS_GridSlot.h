@@ -10,8 +10,6 @@ class UMIS_ItemPopUp;
 class UMIS_InventoryItem;
 class UImage;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMIS_GridSlotEvent, int32, GridIndex, const FPointerEvent&, MouseEvent);
-
 UENUM(BlueprintType)
 enum class EMIS_GridSlotState : uint8
 {
@@ -52,10 +50,6 @@ public:
 	void SetUnoccupiedTexture();
 	void SetSelectedTexture();
 	void SetGrayedOutTexture();
-
-	FMIS_GridSlotEvent GridSlotClicked;
-	FMIS_GridSlotEvent GridSlotHovered;
-	FMIS_GridSlotEvent GridSlotUnhovered;
 
 private:
 	int32 StackCount{0};

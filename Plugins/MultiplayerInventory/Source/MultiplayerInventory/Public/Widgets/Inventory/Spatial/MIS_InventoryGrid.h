@@ -22,9 +22,6 @@ class UMIS_EquippedSlottedItem;
 struct FGameplayTag;
 enum class EMIS_GridSlotState : uint8;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMIS_GridItemHovered, UMIS_InventoryItem*, Item);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FMIS_GridItemUnhovered);
-
 UCLASS()
 class MULTIPLAYERINVENTORY_API UMIS_InventoryGrid : public UUserWidget
 {
@@ -48,9 +45,6 @@ public:
 	void OnHide();
 
 	void InitFromComponent(UMIS_InventoryComponent* InInventoryComponent, UCanvasPanel* InCanvasPanel);
-
-	FMIS_GridItemHovered OnGridItemHovered;
-	FMIS_GridItemUnhovered OnGridItemUnhovered;
 
 	UFUNCTION()
 	void AddItem(UMIS_InventoryItem* Item);
@@ -103,8 +97,6 @@ private:
 	bool IsInGridBounds(const int32 StartIndex, const FIntPoint& ItemDimensions) const;
 	int32 DetermineFillAmountForSlot(const bool bStackable, const int32 MaxStackSize, const int32 AmountToFill, const UMIS_GridSlot* GridSlot) const;
 	int32 GetStackAmount(const UMIS_GridSlot* GridSlot) const;
-	bool IsRightClick(const FPointerEvent& MouseEvent) const;
-	bool IsLeftClick(const FPointerEvent& MouseEvent) const;
 	void PickUp(UMIS_InventoryItem* ClickedInventoryItem, const int32 GridIndex);
 	void AssignHoverItem(UMIS_InventoryItem* InventoryItem, const int32 GridIndex, const int32 PreviousGridIndex);
 	void RemoveItemFromGrid(UMIS_InventoryItem* InventoryItem, const int32 GridIndex);
@@ -185,16 +177,16 @@ private:
 	void AddStacks(const FMIS_SlotAvailabilityResult& Result);
 
 	UFUNCTION()
-	void OnSlottedItemClicked(int32 GridIndex, const FPointerEvent& MouseEvent);
+	void OnSlottedItemClicked(int32 GridIndex, uint8 MouseButton);
 
 	UFUNCTION()
-	void OnGridSlotClicked(int32 GridIndex, const FPointerEvent& MouseEvent);
+	void OnGridSlotClicked(int32 GridIndex, uint8 MouseButton);
 
 	UFUNCTION()
-	void OnGridSlotHovered(int32 GridIndex, const FPointerEvent& MouseEvent);
+	void OnGridSlotHovered(int32 GridIndex);
 
 	UFUNCTION()
-	void OnGridSlotUnhovered(int32 GridIndex, const FPointerEvent& MouseEvent);
+	void OnGridSlotUnhovered(int32 GridIndex);
 
 	UFUNCTION()
 	void OnPopUpMenuSplit(int32 SplitAmount, int32 Index);

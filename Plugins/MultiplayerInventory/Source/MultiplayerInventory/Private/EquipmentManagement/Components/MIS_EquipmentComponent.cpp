@@ -6,6 +6,7 @@
 #include "InventoryManagement/Components/MIS_InventoryComponent.h"
 #include "Items/MIS_InventoryItem.h"
 #include "Items/Fragments/MIS_ItemFragment.h"
+#include "MIS_MessageKeys.h"
 
 UMIS_EquipmentComponent::UMIS_EquipmentComponent()
 {
@@ -43,28 +44,38 @@ void UMIS_EquipmentComponent::Init(APlayerController* InPC, UMIS_InventoryCompon
 			"[装备链路-EquipComp] Init 警告: PlayerController 为空!");
 	}
 
-	// ---- 步骤2: 持有并绑定 InventoryComponent ----
+	// ---- 步骤2: 持有 InventoryComponent 并监听装备状态消息 ----
 	if (IsValid(InInvComp))
 	{
 		InventoryComponent = InInvComp;
 
-		if (!InventoryComponent->OnItemEquipped.IsAlreadyBound(this, &ThisClass::OnItemEquipped))
+		// [解耦重构] 不再绑定委托, 改为监听库存组件广播的装备状态消息 (MIS.Inv.ItemEquipped/Unequipped)。
+		// 监听者传入 this, GMP 内部持弱引用, 组件销毁自动解绑; 标志位防止 Init 被多次调用时重复注册。
+		if (!bListeningInventoryMessages)
 		{
-			InventoryComponent->OnItemEquipped.AddDynamic(this, &ThisClass::OnItemEquipped);
+			bListeningInventoryMessages = true;
+
+			const GMP::FSigSource InventorySource(InInvComp);
+
+			MIS::Listen(MSGKEY(MIS_MSG_ITEM_EQUIPPED), InventorySource, this,
+				[this](UMIS_InventoryItem* EquippedItem)
+				{
+					OnItemEquipped(EquippedItem);
+				});
+
+			MIS::Listen(MSGKEY(MIS_MSG_ITEM_UNEQUIPPED), InventorySource, this,
+				[this](UMIS_InventoryItem* UnequippedItem)
+				{
+					OnItemUnequipped(UnequippedItem);
+				});
+
 			DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
-				"[装备链路-EquipComp] Init: 已绑定 OnItemEquipped");
+				"[装备链路-EquipComp] Init: 已监听 MIS.Inv.ItemEquipped / MIS.Inv.ItemUnequipped");
 		}
 		else
 		{
 			DH_PRINT(EDH_Output::Both, 4.f, DHColors::Cyan,
-				"[装备链路-EquipComp] Init: OnItemEquipped 已绑定,跳过");
-		}
-
-		if (!InventoryComponent->OnItemUnequipped.IsAlreadyBound(this, &ThisClass::OnItemUnequipped))
-		{
-			InventoryComponent->OnItemUnequipped.AddDynamic(this, &ThisClass::OnItemUnequipped);
-			DH_PRINT(EDH_Output::Both, 4.f, DHColors::Green,
-				"[装备链路-EquipComp] Init: 已绑定 OnItemUnequipped");
+				"[装备链路-EquipComp] Init: 装备消息已监听,跳过");
 		}
 	}
 	else

@@ -61,4 +61,7 @@ private:
 	void RemoveEquippedActor(const FGameplayTag& EquipmentTypeTag);
 
 	bool bIsProxy{false};
+
+	/** [解耦重构] 是否已注册库存装备消息监听 (防止 Init 被多次调用时重复注册) */
+	bool bListeningInventoryMessages{false};
 };

@@ -13,7 +13,8 @@ public class MultiplayerInventory : ModuleRules
 				"NetCore",
 				"StructUtils",
 				"GameplayTags",
-				"DebugHelper"
+				"DebugHelper",
+				"GMP"
 			}
 		);
 

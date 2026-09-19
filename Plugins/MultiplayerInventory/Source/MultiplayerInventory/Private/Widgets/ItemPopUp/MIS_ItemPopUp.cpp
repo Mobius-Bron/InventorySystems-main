@@ -4,6 +4,7 @@
 #include "Components/Slider.h"
 #include "Components/TextBlock.h"
 #include "Components/SizeBox.h"
+#include "MIS_MessageKeys.h"
 
 void UMIS_ItemPopUp::NativeOnInitialized()
 {
@@ -55,26 +56,21 @@ FVector2D UMIS_ItemPopUp::GetBoxSize() const
 
 void UMIS_ItemPopUp::SplitButtonClicked()
 {
-	if (OnSplit.ExecuteIfBound(GetSplitAmount(), GridIndex))
-	{
-		RemoveFromParent();
-	}
+	// [解耦重构] 广播消息后自行关闭。原先靠委托返回值决定是否关闭, 现在不再依赖调用方是否绑定。
+	MIS::Emit(MSGKEY(MIS_UI_POPUP_SPLIT), GMP::FSigSource(this), GridIndex, GetSplitAmount());
+	RemoveFromParent();
 }
 
 void UMIS_ItemPopUp::DropButtonClicked()
 {
-	if (OnDrop.ExecuteIfBound(GridIndex))
-	{
-		RemoveFromParent();
-	}
+	MIS::Emit(MSGKEY(MIS_UI_POPUP_DROP), GMP::FSigSource(this), GridIndex);
+	RemoveFromParent();
 }
 
 void UMIS_ItemPopUp::ConsumeButtonClicked()
 {
-	if (OnConsume.ExecuteIfBound(GridIndex))
-	{
-		RemoveFromParent();
-	}
+	MIS::Emit(MSGKEY(MIS_UI_POPUP_CONSUME), GMP::FSigSource(this), GridIndex);
+	RemoveFromParent();
 }
 
 void UMIS_ItemPopUp::SliderValueChanged(float Value)

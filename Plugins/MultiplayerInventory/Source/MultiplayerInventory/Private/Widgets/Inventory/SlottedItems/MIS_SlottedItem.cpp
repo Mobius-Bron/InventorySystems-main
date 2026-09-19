@@ -1,6 +1,7 @@
 #include "Widgets/Inventory/SlottedItems/MIS_SlottedItem.h"
 
 #include "DH_DebugFunctionLibrary.h"
+#include "MIS_MessageKeys.h"
 #include "Items/MIS_InventoryItem.h"
 
 #include "Components/Image.h"
@@ -8,20 +9,22 @@
 
 FReply UMIS_SlottedItem::NativeOnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
-	OnSlottedItemClicked.Broadcast(GridIndex, MouseEvent);
+	// [解耦重构] 广播消息; 只传下游真正需要的"哪个格子 + 哪个键", 不传 Slate 事件对象
+	MIS::Emit(MSGKEY(MIS_UI_SLOTTED_ITEM_CLICKED), GMP::FSigSource(this),
+		GridIndex, MIS::MouseButtonFromEvent(MouseEvent));
 	return FReply::Handled();
 }
 
 void UMIS_SlottedItem::NativeOnMouseEnter(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
 	DH_SCREEN(1.5f, DHColors::Cyan, "[SlottedItem] 鼠标进入 | GridIndex=%d", GridIndex);
-	OnSlottedItemHovered.Broadcast(GridIndex);
+	MIS::Emit(MSGKEY(MIS_UI_SLOTTED_ITEM_HOVERED), GMP::FSigSource(this), GridIndex);
 }
 
 void UMIS_SlottedItem::NativeOnMouseLeave(const FPointerEvent& MouseEvent)
 {
 	DH_SCREEN(1.5f, DHColors::Cyan, "[SlottedItem] 鼠标离开 | GridIndex=%d", GridIndex);
-	OnSlottedItemUnhovered.Broadcast(GridIndex);
+	MIS::Emit(MSGKEY(MIS_UI_SLOTTED_ITEM_UNHOVERED), GMP::FSigSource(this), GridIndex);
 }
 
 void UMIS_SlottedItem::SetInventoryItem(UMIS_InventoryItem* Item)
