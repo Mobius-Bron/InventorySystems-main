@@ -1,6 +1,5 @@
 #include "Items/Manifest/MIS_ItemManifest.h"
 
-#include "DH_DebugFunctionLibrary.h"
 #include "Items/Components/MIS_ItemComponent.h"
 #include "Items/MIS_InventoryItem.h"
 #include "Items/Fragments/MIS_ItemFragment.h"
@@ -24,11 +23,9 @@ UMIS_InventoryItem* FMIS_ItemManifest::Manifest(UObject* NewOuter)
 
 void FMIS_ItemManifest::AssimilateInventoryFragments(UMIS_CompositeBase* Composite) const
 {
-	DH_SCREEN(2.f, DHColors::Orange, "填充物品描述框");
 	const auto& InventoryItemFragments = GetAllFragmentsOfType<FMIS_InventoryItemFragment>();
 	for (const auto* Fragment : InventoryItemFragments)
 	{
-		DH_SCREEN(2.f, DHColors::Red, "填充数值");
 		Composite->ApplyFunction([Fragment](UMIS_CompositeBase* Widget)
 		{
 			Fragment->Assimilate(Widget);

@@ -114,8 +114,6 @@ void AMIS_PlayerCharacter::Look(const FInputActionValue& Value)
 
 void AMIS_PlayerCharacter::PrimaryInteract(const FInputActionValue& Value)
 {
-	DH_SCREEN(2.f, DHColors::Cyan, "[角色] 按下拾取键");
-
 	if (IsValid(InventoryComponent))
 	{
 		InventoryComponent->PrimaryInteract();

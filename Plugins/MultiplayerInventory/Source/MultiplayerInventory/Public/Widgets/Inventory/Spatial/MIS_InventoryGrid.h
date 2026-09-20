@@ -35,7 +35,6 @@ public:
 	FMIS_SlotAvailabilityResult HasRoomForItem(const UMIS_ItemComponent* ItemComponent);
 	void ShowCursor();
 	void HideCursor();
-	void SetOwningCanvas(UCanvasPanel* OwningCanvas);
 	void DropItem();
 	bool HasHoverItem() const;
 	UMIS_HoverItem* GetHoverItem() const;
@@ -46,8 +45,9 @@ public:
 
 	void InitFromComponent(UMIS_InventoryComponent* InInventoryComponent, UCanvasPanel* InCanvasPanel);
 
+	/** @param UpperLeftIndex 服务端分配的落点 (INDEX_NONE 表示未分配, 回退到本地计算) */
 	UFUNCTION()
-	void AddItem(UMIS_InventoryItem* Item);
+	void AddItem(UMIS_InventoryItem* Item, int32 UpperLeftIndex);
 
 	UFUNCTION()
 	void OnExternalItemRemoved(UMIS_InventoryItem* Item);
@@ -111,8 +111,6 @@ private:
 	void UnHighlightSlots(const int32 Index, const FIntPoint& Dimensions);
 	void ChangeHoverType(const int32 Index, const FIntPoint& Dimensions, EMIS_GridSlotState GridSlotState);
 	void PutDownOnIndex(const int32 Index);
-	UUserWidget* GetVisibleCursorWidget();
-	UUserWidget* GetHiddenCursorWidget();
 	bool IsSameStackable(const UMIS_InventoryItem* ClickedInventoryItem) const;
 	void SwapWithHoverItem(UMIS_InventoryItem* ClickedInventoryItem, const int32 GridIndex);
 	bool ShouldSwapStackCounts(const int32 RoomInClickedSlot, const int32 HoveredStackCount, const int32 MaxStackSize) const;
@@ -161,18 +159,6 @@ private:
 	UPROPERTY()
 	TObjectPtr<UMIS_ItemPopUp> ItemPopUp;
 
-	UPROPERTY(EditAnywhere, Category = "Inventory")
-	TSubclassOf<UUserWidget> VisibleCursorWidgetClass;
-
-	UPROPERTY(EditAnywhere, Category = "Inventory")
-	TSubclassOf<UUserWidget> HiddenCursorWidgetClass;
-
-	UPROPERTY()
-	TObjectPtr<UUserWidget> VisibleCursorWidget;
-
-	UPROPERTY()
-	TObjectPtr<UUserWidget> HiddenCursorWidget;
-
 	UFUNCTION()
 	void AddStacks(const FMIS_SlotAvailabilityResult& Result);
 
@@ -202,9 +188,6 @@ private:
 
 	UFUNCTION()
 	void OnSlottedItemUnhovered(int32 GridIndex);
-
-	UFUNCTION()
-	void OnInventoryMenuToggled(bool bOpen);
 
 	UFUNCTION()
 	void EquippedGridSlotClicked(UMIS_EquippedGridSlot* EquippedGridSlot, const FGameplayTag& EquipmentTypeTag);

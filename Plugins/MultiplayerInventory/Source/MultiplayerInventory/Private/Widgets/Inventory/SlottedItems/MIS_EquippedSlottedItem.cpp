@@ -8,8 +8,3 @@ FReply UMIS_EquippedSlottedItem::NativeOnMouseButtonDown(const FGeometry& InGeom
 	MIS::Emit(MSGKEY(MIS_UI_EQUIPPED_SLOTTED_ITEM_CLICKED), GMP::FSigSource(this), this);
 	return FReply::Handled();
 }
-
-void UMIS_EquippedSlottedItem::SetImage(UTexture2D* Icon) const
-{
-	
-}

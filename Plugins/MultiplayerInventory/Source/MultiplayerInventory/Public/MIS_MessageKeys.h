@@ -15,6 +15,12 @@
  *     字面量作为非类型模板参数 (NTTP), 变量形式无法通过编译。
  *  4. GMP 的消息派发是**同步**的 (同一游戏线程、同一调用栈内完成), 因此
  *     消息化不会改变任何时序, 监听方在回调里可以直接拿到栈上实参的引用。
+ *  5. ⚠ 发送端与监听端的参数类型必须严格一致。GMP 在 Editor 下会做运行时签名校验
+ *     (GMPHub.h 的 IsSignatureCompatible), 不一致时触发
+ *     "SignatureMismatch On Send <键名>" 并**直接丢弃该消息**——不会编译报错,
+ *     表现为"消息发了但对端毫无反应"。
+ *     最典型的坑: TObjectPtr<T> 与 T* 不是同一类型。传 UPROPERTY 对象成员时必须 .Get(),
+ *     例如 FastArray 里的 Entries[i].Item.Get()。
  *
  * 命名规范:
  *  MIS.Inv.*  —— 数据层 -> UI 的状态通知 (单向广播)

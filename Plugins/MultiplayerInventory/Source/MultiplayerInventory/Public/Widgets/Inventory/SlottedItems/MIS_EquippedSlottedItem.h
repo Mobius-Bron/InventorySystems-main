@@ -18,7 +18,6 @@ protected:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
 
 public:
-	void SetImage(UTexture2D* Icon) const;
 	void SetEquipmentTypeTag(const FGameplayTag& Tag) { EquipmentTypeTag = Tag; }
 	FGameplayTag GetEquipmentTypeTag() const { return EquipmentTypeTag; }
 

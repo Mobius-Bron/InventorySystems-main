@@ -36,22 +36,20 @@ void UMIS_InventoryGrid::InitFromComponent(UMIS_InventoryComponent* InInventoryC
 	InventoryComponent = InInventoryComponent;
 	OwningCanvasPanel = InCanvasPanel;
 
-	DH_SCREEN(5.f, DHColors::Orange,
-		"[背包网格] InitFromComponent | InvComp=%s | Canvas=%s | GridSlots=%d",
-		IsValid(InInventoryComponent) ? TEXT("有效") : TEXT("空"),
-		IsValid(InCanvasPanel) ? TEXT("有效") : TEXT("空"),
-		GridSlots.Num());
-
 	if (InventoryComponent.IsValid())
 	{
+		// [服务端权威] 把本网格的实际布局上报给服务端, 使其能独立校验落点合法性。
+		// 专用服务器没有 UI, 需改为在 InventoryComponent 的蓝图属性里配置 GridColumns/GridRows。
+		InventoryComponent->Server_SetGridLayout(Columns, Rows);
+
 		// [解耦重构] 不再绑定数据层委托, 改为监听数据层广播的消息。
 		// SigSource 使用库存组件本身, 与数据层发送侧保持一致 (定向投递, 多实例不串台)。
 		const GMP::FSigSource InventorySource(InventoryComponent.Get());
 
 		MIS::Listen(MSGKEY(MIS_MSG_ITEM_ADDED), InventorySource, this,
-			[this](UMIS_InventoryItem* Item)
+			[this](UMIS_InventoryItem* Item, int32 UpperLeftIndex)
 			{
-				AddItem(Item);
+				AddItem(Item, UpperLeftIndex);
 			});
 
 		MIS::Listen(MSGKEY(MIS_MSG_ITEM_REMOVED), InventorySource, this,
@@ -65,9 +63,6 @@ void UMIS_InventoryGrid::InitFromComponent(UMIS_InventoryComponent* InInventoryC
 			{
 				AddStacks(Result);
 			});
-
-		DH_SCREEN(3.f, DHColors::Orange,
-			"[背包网格] 已监听 MIS.Inv.ItemAdded + ItemRemoved + StackChanged 消息");
 	}
 
 	BindEquippedGridSlotDelegates();
@@ -498,15 +493,12 @@ int32 UMIS_InventoryGrid::GetStackAmount(const UMIS_GridSlot* GridSlot) const
 
 void UMIS_InventoryGrid::PickUp(UMIS_InventoryItem* ClickedInventoryItem, const int32 GridIndex)
 {
-	DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] PickUp | idx=%d", GridIndex);
 	AssignHoverItem(ClickedInventoryItem, GridIndex, GridIndex);
 	RemoveItemFromGrid(ClickedInventoryItem, GridIndex);
 }
 
 void UMIS_InventoryGrid::AssignHoverItem(UMIS_InventoryItem* InventoryItem, const int32 GridIndex, const int32 PreviousGridIndex)
 {
-	DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] AssignHoverItem | idx=%d | prev=%d", GridIndex, PreviousGridIndex);
-
 	AssignHoverItem(InventoryItem);
 
 	HoverItem->SetPreviousGridIndex(PreviousGridIndex);
@@ -516,9 +508,6 @@ void UMIS_InventoryGrid::AssignHoverItem(UMIS_InventoryItem* InventoryItem, cons
 void UMIS_InventoryGrid::RemoveItemFromGrid(UMIS_InventoryItem* InventoryItem, const int32 GridIndex)
 {
 	const FMIS_GridFragment* GridFragment = GetFragment<FMIS_GridFragment>(InventoryItem, MIS_FragmentTags::GridFragment);
-
-	DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] RemoveItemFromGrid | idx=%d | GridFrag=%s",
-		GridIndex, GridFragment ? TEXT("有效") : TEXT("空"));
 
 	if (!GridFragment) return;
 
@@ -586,10 +575,6 @@ void UMIS_InventoryGrid::OnHide()
 
 void UMIS_InventoryGrid::AddStacks(const FMIS_SlotAvailabilityResult& Result)
 {
-	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Orange,
-		"[背包网格] AddStacks 触发 | 槽位数=%d | 可堆叠=%d",
-		Result.SlotAvailabilities.Num(), Result.bStackable);
-
 	if (Result.SlotAvailabilities.Num() == 0 && Result.Item.IsValid())
 	{
 		for (auto& Pair : SlottedItems)
@@ -599,8 +584,6 @@ void UMIS_InventoryGrid::AddStacks(const FMIS_SlotAvailabilityResult& Result)
 				const int32 NewStack = GridSlots[Pair.Key]->GetStackCount() + Result.TotalRoomToFill;
 				Pair.Value->UpdateStackCount(NewStack);
 				GridSlots[Pair.Key]->SetStackCount(NewStack);
-				DH_PRINT(EDH_Output::Both, 3.f, DHColors::Orange,
-					"[背包网格] AddStacks 堆叠更新 | idx=%d | 新堆叠=%d", Pair.Key, NewStack);
 				return;
 			}
 		}
@@ -610,10 +593,6 @@ void UMIS_InventoryGrid::AddStacks(const FMIS_SlotAvailabilityResult& Result)
 
 	for (const auto& Availability : Result.SlotAvailabilities)
 	{
-		DH_PRINT(EDH_Output::Both, 3.f, DHColors::Orange,
-			"[背包网格] AddStacks 槽位 | idx=%d | 已有物品=%d | 填充=%d",
-			Availability.Index, Availability.bItemAtIndex, Availability.AmountToFill);
-
 		if (Availability.bItemAtIndex)
 		{
 			const auto& GridSlot = GridSlots[Availability.Index];
@@ -638,13 +617,8 @@ void UMIS_InventoryGrid::OnSlottedItemClicked(int32 GridIndex, uint8 MouseButton
 	const bool bLeftClick = (MouseButton == MIS::MouseButton_Left);
 	const bool bRightClick = (MouseButton == MIS::MouseButton_Right);
 
-	DH_SCREEN(2.f, DHColors::Magenta,
-		"[背包网格] 槽位点击 | idx=%d | 有HoverItem=%d | 左键=%d | 右键=%d",
-		GridIndex, IsValid(HoverItem), bLeftClick, bRightClick);
-
 	if (!IsValid(HoverItem) && bLeftClick)
 	{
-		DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] >> 情况1: 拾起物品");
 		OnItemUnhovered();
 		PickUp(ClickedInventoryItem, GridIndex);
 		return;
@@ -745,8 +719,6 @@ void UMIS_InventoryGrid::CreateItemPopUp(const int32 GridIndex)
 
 void UMIS_InventoryGrid::PutHoverItemBack()
 {
-	DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] PutHoverItemBack | 放置悬停物品回原位");
-
 	if (!IsValid(HoverItem)) return;
 
 	FMIS_SlotAvailabilityResult Result = HasRoomForItem(HoverItem->GetInventoryItem(), HoverItem->GetStackCount());
@@ -758,8 +730,6 @@ void UMIS_InventoryGrid::PutHoverItemBack()
 
 void UMIS_InventoryGrid::DropItem()
 {
-	DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] DropItem | 丢弃悬停物品");
-
 	OnItemUnhovered();
 
 	if (!IsValid(HoverItem)) return;
@@ -784,15 +754,39 @@ UMIS_HoverItem* UMIS_InventoryGrid::GetHoverItem() const
 	return HoverItem;
 }
 
-void UMIS_InventoryGrid::AddItem(UMIS_InventoryItem* Item)
+void UMIS_InventoryGrid::AddItem(UMIS_InventoryItem* Item, int32 UpperLeftIndex)
 {
-	DH_SCREEN(3.f, DHColors::Orange, "[背包网格] AddItem 触发 | Item=%s",
-		IsValid(Item) ? *Item->GetName() : TEXT("空"));
+	if (!IsValid(Item)) return;
+
+	// [服务端权威] 优先按服务端分配的落点渲染, UI 不再自己找位置。
+	// 这样做同时保证: 各端(含监听服上的本地玩家)看到的布局与服务端一致。
+	if (GridSlots.IsValidIndex(UpperLeftIndex))
+	{
+		const FMIS_GridFragment* GridFragment = GetFragment<FMIS_GridFragment>(Item, MIS_FragmentTags::GridFragment);
+		const FMIS_ImageFragment* ImageFragment = GetFragment<FMIS_ImageFragment>(Item, MIS_FragmentTags::IconFragment);
+		if (!GridFragment || !ImageFragment)
+		{
+			DH_LOG_WARN("[背包网格] AddItem 缺少 Grid/Image Fragment, 无法渲染 | Item=%s",
+				*Item->GetName());
+			return;
+		}
+
+		const bool bStackable = Item->IsStackable();
+		const int32 StackAmount = Item->GetTotalStackCount();
+
+		UMIS_SlottedItem* SlottedItem = CreateSlottedItem(Item, bStackable, StackAmount, GridFragment, ImageFragment, UpperLeftIndex);
+		AddSlottedItemToCanvas(UpperLeftIndex, GridFragment, SlottedItem);
+		SlottedItems.Add(UpperLeftIndex, SlottedItem);
+		UpdateGridSlots(Item, UpperLeftIndex, bStackable, StackAmount);
+
+		return;
+	}
+
+	// 回退路径: 落点缺失 (服务端未启用权威分配或数据异常) 时沿用本地空间计算。
+	// 正常流程不该走到这里, 因此按告警输出, 便于发现。
+	DH_LOG_WARN("[背包网格] 落点缺失, 回退到本地空间计算 | Item=%s", *Item->GetName());
 
 	FMIS_SlotAvailabilityResult Result = HasRoomForItem(Item);
-
-	DH_SCREEN(3.f, DHColors::Orange, "[背包网格] HasRoomForItem 结果 | 总空间=%d | 槽位数=%d",
-		Result.TotalRoomToFill, Result.SlotAvailabilities.Num());
 
 	AddItemToIndices(Result, Item);
 }
@@ -811,21 +805,12 @@ void UMIS_InventoryGrid::AddItemAtIndex(UMIS_InventoryItem* Item, const int32 In
 	const FMIS_GridFragment* GridFragment = GetFragment<FMIS_GridFragment>(Item, MIS_FragmentTags::GridFragment);
 	const FMIS_ImageFragment* ImageFragment = GetFragment<FMIS_ImageFragment>(Item, MIS_FragmentTags::IconFragment);
 
-	DH_SCREEN(3.f, DHColors::Orange,
-		"[背包网格] AddItemAtIndex | idx=%d | GridFrag=%s | ImageFrag=%s | Stack=%d",
-		Index, GridFragment ? TEXT("有效") : TEXT("空"),
-		ImageFragment ? TEXT("有效") : TEXT("空"), StackAmount);
-
 	if (!GridFragment || !ImageFragment) return;
 
 	UMIS_SlottedItem* SlottedItem = CreateSlottedItem(Item, bStackable, StackAmount, GridFragment, ImageFragment, Index);
 	AddSlottedItemToCanvas(Index, GridFragment, SlottedItem);
 
 	SlottedItems.Add(Index, SlottedItem);
-
-	DH_SCREEN(2.f, DHColors::Orange,
-		"[背包网格] 物品已添加到格子 | idx=%d | 格子尺寸=%dx%d",
-		Index, GridFragment->GetGridSize().X, GridFragment->GetGridSize().Y);
 }
 
 UMIS_SlottedItem* UMIS_InventoryGrid::CreateSlottedItem(UMIS_InventoryItem* Item, const bool bStackable, const int32 StackAmount, const FMIS_GridFragment* GridFragment, const FMIS_ImageFragment* ImageFragment, const int32 Index)
@@ -1046,9 +1031,6 @@ void UMIS_InventoryGrid::OnSlottedItemHovered(int32 GridIndex)
 	UMIS_InventoryItem* Item = GridSlots[GridIndex]->GetInventoryItem().Get();
 	if (!IsValid(Item)) return;
 
-	DH_SCREEN(2.f, DHColors::Orange, "[InventoryGrid] 物品悬停 | Item=%s | 开始%.1fs计时器",
-		*Item->GetName(), DescriptionTimerDelay);
-
 	GetItemDescription()->SetVisibility(ESlateVisibility::Collapsed);
 	GetWorld()->GetTimerManager().ClearTimer(DescriptionTimer);
 
@@ -1059,9 +1041,6 @@ void UMIS_InventoryGrid::OnSlottedItemHovered(int32 GridIndex)
 	{
 		UMIS_ItemDescription* DescWidget = GetItemDescription();
 		if (!IsValid(DescWidget)) return;
-
-		DH_SCREEN(2.f, DHColors::Orange, "[InventoryGrid] 计时器触发 | 显示描述 | Item=%s",
-			*Item->GetName());
 
 		DescWidget->Collapse();
 		Manifest.AssimilateInventoryFragments(DescWidget);
@@ -1091,21 +1070,11 @@ void UMIS_InventoryGrid::OnSlottedItemUnhovered(int32 GridIndex)
 
 void UMIS_InventoryGrid::OnItemUnhovered()
 {
-	DH_SCREEN(1.5f, DHColors::Orange, "[InventoryGrid] 物品离开 | 清除计时器");
-
 	GetItemDescription()->SetVisibility(ESlateVisibility::Collapsed);
 	GetWorld()->GetTimerManager().ClearTimer(DescriptionTimer);
 
 	ClearEquippedItemDescription();
 	GetWorld()->GetTimerManager().ClearTimer(EquippedDescriptionTimer);
-}
-
-void UMIS_InventoryGrid::OnInventoryMenuToggled(bool bOpen)
-{
-	if (!bOpen)
-	{
-		OnHide();
-	}
 }
 
 void UMIS_InventoryGrid::ShowCursor()
@@ -1121,8 +1090,6 @@ void UMIS_InventoryGrid::HideCursor()
 
 void UMIS_InventoryGrid::ClearHoverItem()
 {
-	DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] ClearHoverItem | 清除悬停物品");
-
 	if (!IsValid(HoverItem)) return;
 
 	HoverItem->SetInventoryItem(nullptr);
@@ -1137,52 +1104,20 @@ void UMIS_InventoryGrid::ClearHoverItem()
 	ShowCursor();
 }
 
-void UMIS_InventoryGrid::SetOwningCanvas(UCanvasPanel* OwningCanvas)
-{
-	OwningCanvasPanel = OwningCanvas;
-}
-
 void UMIS_InventoryGrid::PutDownOnIndex(const int32 Index)
 {
-	DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] PutDownOnIndex | idx=%d", Index);
-
 	AddItemAtIndex(HoverItem->GetInventoryItem(), Index, HoverItem->IsStackable(), HoverItem->GetStackCount());
 	UpdateGridSlots(HoverItem->GetInventoryItem(), Index, HoverItem->IsStackable(), HoverItem->GetStackCount());
 	ClearHoverItem();
 }
 
-UUserWidget* UMIS_InventoryGrid::GetVisibleCursorWidget()
-{
-	if (!IsValid(GetOwningPlayer())) return nullptr;
-	if (!IsValid(VisibleCursorWidget))
-	{
-		VisibleCursorWidget = CreateWidget<UUserWidget>(GetOwningPlayer(), VisibleCursorWidgetClass);
-	}
-	return VisibleCursorWidget;
-}
-
-UUserWidget* UMIS_InventoryGrid::GetHiddenCursorWidget()
-{
-	if (!IsValid(GetOwningPlayer())) return nullptr;
-	if (!IsValid(HiddenCursorWidget))
-	{
-		HiddenCursorWidget = CreateWidget<UUserWidget>(GetOwningPlayer(), HiddenCursorWidgetClass);
-	}
-	return HiddenCursorWidget;
-}
-
 void UMIS_InventoryGrid::OnGridSlotClicked(int32 GridIndex, uint8 MouseButton)
 {
-	DH_PRINT(EDH_Output::Both, 2.f, DHColors::Magenta,
-		"[背包网格] 背景下点击 | ItemDropIndex=%d | 有HoverItem=%d | 有ValidItem=%d",
-		ItemDropIndex, IsValid(HoverItem), CurrentQueryResult.ValidItem.IsValid());
-
 	if (!IsValid(HoverItem)) return;
 	if (!GridSlots.IsValidIndex(ItemDropIndex)) return;
 
 	if (CurrentQueryResult.ValidItem.IsValid() && GridSlots.IsValidIndex(CurrentQueryResult.UpperLeftIndex))
 	{
-		DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] >> 交换: 点击已有物品");
 		// 转发给物品点击逻辑, 鼠标键原样透传 (保持"左键拾取 / 右键菜单"语义)
 		OnSlottedItemClicked(CurrentQueryResult.UpperLeftIndex, MouseButton);
 		return;
@@ -1192,7 +1127,6 @@ void UMIS_InventoryGrid::OnGridSlotClicked(int32 GridIndex, uint8 MouseButton)
 	auto GridSlot = GridSlots[ItemDropIndex];
 	if (!GridSlot->GetInventoryItem().IsValid())
 	{
-		DH_SCREEN(2.f, DHColors::Magenta, "[背包网格] >> 放下: 放到空位");
 		PutDownOnIndex(ItemDropIndex);
 	}
 }
@@ -1335,12 +1269,6 @@ void UMIS_InventoryGrid::BindEquippedGridSlotDelegates()
 
 void UMIS_InventoryGrid::EquippedGridSlotClicked(UMIS_EquippedGridSlot* EquippedGridSlot, const FGameplayTag& EquipmentTypeTag)
 {
-	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
-		"[装备链路-UI] >>> 点击装备槽 | Slot=%s | Tag=%s | 有Hover=%d",
-		IsValid(EquippedGridSlot) ? *EquippedGridSlot->GetName() : TEXT("空"),
-		*EquipmentTypeTag.ToString(),
-		IsValid(HoverItem));
-
 	if (!CanEquipHoverItem(EquippedGridSlot, EquipmentTypeTag))
 	{
 		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
@@ -1356,10 +1284,6 @@ void UMIS_InventoryGrid::EquippedGridSlotClicked(UMIS_EquippedGridSlot* Equipped
 	}
 
 	UMIS_InventoryItem* ItemToEquip = HoverItem->GetInventoryItem();
-	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
-		"[装备链路-UI] 准备装备 | Item=%s | Tag=%s",
-		IsValid(ItemToEquip) ? *ItemToEquip->GetName() : TEXT("空"),
-		*EquipmentTypeTag.ToString());
 
 	UMIS_EquippedSlottedItem* EquippedSlottedItem = EquippedGridSlot->OnItemEquipped(
 		HoverItem->GetInventoryItem(),
@@ -1372,9 +1296,6 @@ void UMIS_InventoryGrid::EquippedGridSlotClicked(UMIS_EquippedGridSlot* Equipped
 
 	if (InventoryComponent.IsValid())
 	{
-		DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
-			"[装备链路-UI] >>> 发送 MIS.Cmd.EquipSlotClicked | EquipTo=%s | UnequipTo=nullptr",
-			*ItemToEquip->GetName());
 		MIS::Emit(MSGKEY(MIS_CMD_EQUIP_SLOT), GMP::FSigSource(InventoryComponent.Get()),
 			ItemToEquip, static_cast<UMIS_InventoryItem*>(nullptr));
 	}
@@ -1408,10 +1329,6 @@ void UMIS_InventoryGrid::EquippedSlottedItemClicked(UMIS_EquippedSlottedItem* Eq
 {
 	OnItemUnhovered();
 
-	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
-		"[装备链路-UI] >>> 点击已装备物品 | SlottedItem=%s",
-		IsValid(EquippedSlottedItem) ? *EquippedSlottedItem->GetName() : TEXT("空"));
-
 	if (!IsValid(EquippedSlottedItem))
 	{
 		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
@@ -1428,11 +1345,6 @@ void UMIS_InventoryGrid::EquippedSlottedItemClicked(UMIS_EquippedSlottedItem* Eq
 
 	UMIS_InventoryItem* ItemToEquip = IsValid(GetHoverItem()) ? GetHoverItem()->GetInventoryItem() : nullptr;
 	UMIS_InventoryItem* ItemToUnequip = EquippedSlottedItem->GetInventoryItem();
-
-	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
-		"[装备链路-UI] 交换装备 | EquipTo=%s | UnequipTo=%s",
-		IsValid(ItemToEquip) ? *ItemToEquip->GetName() : TEXT("空"),
-		IsValid(ItemToUnequip) ? *ItemToUnequip->GetName() : TEXT("空"));
 
 	UMIS_EquippedGridSlot* EquippedGridSlot = FindSlotWithEquippedItem(ItemToUnequip);
 	ClearSlotOfItem(EquippedGridSlot);
@@ -1490,12 +1402,6 @@ void UMIS_InventoryGrid::MakeEquippedSlottedItem(UMIS_EquippedSlottedItem* OldSl
 
 void UMIS_InventoryGrid::BroadcastSlotClickedDelegates(UMIS_InventoryItem* ItemToEquip, UMIS_InventoryItem* ItemToUnequip) const
 {
-	DH_PRINT(EDH_Output::Both, 3.f, DHColors::Green,
-		"[装备链路-UI] BroadcastSlotClickedDelegates | Equip=%s | Unequip=%s | InvComp有效=%d",
-		IsValid(ItemToEquip) ? *ItemToEquip->GetName() : TEXT("空"),
-		IsValid(ItemToUnequip) ? *ItemToUnequip->GetName() : TEXT("空"),
-		InventoryComponent.IsValid());
-
 	if (InventoryComponent.IsValid())
 	{
 		// [解耦重构] UI 只发意图命令

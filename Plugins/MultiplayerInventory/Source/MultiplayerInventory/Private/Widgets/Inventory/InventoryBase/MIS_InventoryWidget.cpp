@@ -16,7 +16,6 @@ void UMIS_InventoryWidget::NativeOnInitialized()
 
 void UMIS_InventoryWidget::InitFromComponent(UMIS_InventoryComponent* InInventoryComponent)
 {
-	InventoryComponent = InInventoryComponent;
 	InventoryGrid->InitFromComponent(InInventoryComponent, CanvasPanel);
 
 	// [解耦重构] 监听数据层广播的开关消息, 由界面自己决定显隐与输入模式。
@@ -39,8 +38,6 @@ void UMIS_InventoryWidget::InitFromComponent(UMIS_InventoryComponent* InInventor
 					CloseInventory();
 				}
 			});
-
-		UE_LOG(LogTemp, Log, TEXT("[背包界面] 已监听 MIS.Inv.MenuToggled"));
 	}
 }
 

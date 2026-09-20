@@ -40,8 +40,6 @@ void UMIS_HUDWidget::SetInventoryComponent(UMIS_InventoryComponent* InInventoryC
 		{
 			SetVisibility(bOpen ? ESlateVisibility::Hidden : ESlateVisibility::HitTestInvisible);
 		});
-
-	UE_LOG(LogTemp, Log, TEXT("[背包HUD] 已监听 MIS.Inv.NoRoom / PickupPrompt / MenuToggled"));
 }
 
 void UMIS_HUDWidget::OnNoRoom()

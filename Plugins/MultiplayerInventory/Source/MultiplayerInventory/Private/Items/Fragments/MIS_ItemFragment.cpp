@@ -13,7 +13,6 @@ void FMIS_InventoryItemFragment::Assimilate(UMIS_CompositeBase* Composite) const
 	// 检查 Composite 的 FragmentTag 是否匹配此 Fragment 的标签
 	if (!MatchesWidgetTag(Composite)) { return; }
 	// 不匹配则保持折叠,匹配则展开该控件
-	DH_SCREEN(2.f, DHColors::LightRed, "Tag匹配");
 	Composite->Expand();
 }
 
@@ -248,13 +247,6 @@ void FMIS_EquipmentFragment::Manifest()
 
 AMIS_EquipActor* FMIS_EquipmentFragment::SpawnAttachedActor(USkeletalMeshComponent* AttachMesh) const
 {
-	DH_PRINT(EDH_Output::Both, 4.f, DHColors::Cyan,
-		"[装备链路-Fragment] >>> SpawnAttachedActor | AttachMesh=%s | EquipActorClass=%s | Socket=%s | World=%s",
-		IsValid(AttachMesh) ? *AttachMesh->GetName() : TEXT("空"),
-		EquipActorClass ? *EquipActorClass->GetName() : TEXT("空"),
-		*SocketAttachPoint.ToString(),
-		IsValid(AttachMesh) && AttachMesh->GetWorld() ? *AttachMesh->GetWorld()->GetName() : TEXT("空"));
-
 	if (!IsValid(AttachMesh) || !EquipActorClass)
 	{
 		DH_PRINT(EDH_Output::Both, 2.f, FLinearColor::Red,
@@ -272,9 +264,6 @@ AMIS_EquipActor* FMIS_EquipmentFragment::SpawnAttachedActor(USkeletalMeshCompone
 	{
 		// 附着到骨骼网格体的指定槽位 (如 "hand_r" 右手)
 		SpawnedActor->AttachToComponent(AttachMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketAttachPoint);
-		DH_PRINT(EDH_Output::Both, 4.f, FLinearColor::Green,
-			"[装备链路-Fragment] SpawnAttachedActor: 生成并附着成功! | Actor=%s | Socket=%s",
-			*SpawnedActor->GetName(), *SocketAttachPoint.ToString());
 	}
 	else
 	{

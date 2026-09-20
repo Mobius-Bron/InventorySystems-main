@@ -28,6 +28,17 @@ private:
 	/** 物品引用 */
 	UPROPERTY()
 	TObjectPtr<UMIS_InventoryItem> Item = nullptr;
+
+	/**
+	 * [服务端权威] 物品左上角所在的网格索引 (INDEX_NONE = 未分配位置)。
+	 *
+	 * 位置原先只存在于 UI 的 SlottedItems 里, 服务端完全不知道物品摆在哪,
+	 * 因此无法独立判定"装不装得下", 拾取是否成功实际上由客户端说了算。
+	 * 现在把落点纳入 FastArray 复制, 服务端便持有一份完整的位置表,
+	 * 可以独立校验放置合法性 (见 UMIS_InventoryComponent::ValidatePlacement)。
+	 */
+	UPROPERTY()
+	int32 UpperLeftIndex = INDEX_NONE;
 };
 
 /**
@@ -57,11 +68,12 @@ struct FMIS_InventoryFastArray : public FFastArraySerializer
 		return FastArrayDeltaSerialize<FMIS_InventoryEntry, FMIS_InventoryFastArray>(Entries, DeltaParams, *this);
 	}
 
-	/** 从 ItemComponent 创建新条目 (拾取新物品) */
-	UMIS_InventoryItem* AddEntry(UMIS_ItemComponent* ItemComponent);
+	/** 从 ItemComponent 创建新条目 (拾取新物品)
+	 *  @param UpperLeftIndex  服务端/客户端商定的落点索引, INDEX_NONE 表示未指定 */
+	UMIS_InventoryItem* AddEntry(UMIS_ItemComponent* ItemComponent, int32 UpperLeftIndex = INDEX_NONE);
 
 	/** 从已有的 InventoryItem 添加条目 */
-	UMIS_InventoryItem* AddEntry(UMIS_InventoryItem* Item);
+	UMIS_InventoryItem* AddEntry(UMIS_InventoryItem* Item, int32 UpperLeftIndex = INDEX_NONE);
 
 	/** 移除指定物品的条目 */
 	void RemoveEntry(UMIS_InventoryItem* Item);
